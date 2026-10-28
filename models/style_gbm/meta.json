@@ -1,0 +1,67 @@
+{
+  "features": [
+    "speed_mean",
+    "speed_std",
+    "speed_max",
+    "over_limit_mean",
+    "frac_over_limit_10",
+    "speed_ratio_mean",
+    "speed_ratio_p95",
+    "frac_over_limit_20",
+    "lon_p05",
+    "lon_p95",
+    "lon_std",
+    "lon_jerk_std",
+    "lat_abs_p95",
+    "lat_std",
+    "lat_x_speed",
+    "harsh_brake",
+    "harsh_accel",
+    "harsh_turn",
+    "mag_std",
+    "mag_p95",
+    "mag_max",
+    "jerk_p95",
+    "band_low_frac",
+    "band_mid_frac",
+    "band_high_frac"
+  ],
+  "classes": [
+    "NORMAL",
+    "AGGRESSIVE",
+    "DROWSY"
+  ],
+  "params": {
+    "n_estimators": 300,
+    "learning_rate": 0.03,
+    "num_leaves": 15,
+    "min_child_samples": 20,
+    "subsample": 0.8,
+    "subsample_freq": 1,
+    "colsample_bytree": 0.8,
+    "reg_lambda": 1.0,
+    "verbose": -1,
+    "class_weight": "balanced"
+  },
+  "model_sha": "59d0dda52e19",
+  "git_commit": "b17ed09",
+  "dirty": true,
+  "trained_on_drivers": [
+    "D1",
+    "D2",
+    "D4",
+    "D5",
+    "D6"
+  ],
+  "dev_lodo": {
+    "window_macro_f1": 0.6603296544224485,
+    "trip_accuracy": 0.7878787878787878,
+    "trip_auc_risky": 0.9248120300751879,
+    "n_trips": 33,
+    "n_windows": 1588,
+    "trip_accuracy_ci95": [
+      0.6363636363636364,
+      0.9090909090909091
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "martinsvarna/octa-template",
+  "title": "OCTA template",
+  "code_file": "notebook.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [
+    "martinsvarna/octa-driving-data",
+    "outofskills/driving-behavior",
+    "shashwatwork/driving-behavior-dataset",
+    "gloseto/traffic-driving-style-road-surface-condition",
+    "floser/french-motor-claims-datasets-fremtpl2freq",
+    "tsiaras/uk-road-safety-accidents-and-vehicles",
+    "jaymovaliya14/uah-driveset"
+  ],
+  "competition_sources": [],
+  "kernel_sources": []
+}

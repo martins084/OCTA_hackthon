@@ -28,3 +28,8 @@ venv/
 
 # Logs
 *.log
+
+# Data (lives on Kaggle, see docs/DATA.md)
+data/
+kaggle/octa-data/*
+!kaggle/octa-data/dataset-metadata.json

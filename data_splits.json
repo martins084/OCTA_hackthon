@@ -1,0 +1,18 @@
+{
+  "_doc": "Single source of truth for dev/blind splits. See docs/PLAN.md section 3. Do not edit without logging the change in docs/BLIND_LOG.md.",
+  "locked_at": "2026-10-28",
+  "uah": {
+    "dev_drivers": ["D1", "D2", "D4", "D5", "D6"],
+    "blind_drivers": ["D3"],
+    "blind_path": "data/raw/blind_uah"
+  },
+  "events": {
+    "dev_datasets": ["byd", "saboor", "shashwat", "uah_algorithmic"],
+    "blind_datasets": ["ferreira"],
+    "blind_path": "data/raw/blind_ferreira"
+  },
+  "own_recordings": {
+    "blind": true,
+    "blind_path": "data/raw/blind_own"
+  }
+}
