@@ -2,17 +2,53 @@
   "_doc": "Single source of truth for dev/blind splits. See docs/PLAN.md section 3. Do not edit without logging the change in docs/BLIND_LOG.md.",
   "locked_at": "2026-10-28",
   "uah": {
-    "dev_drivers": ["D1", "D2", "D4", "D5", "D6"],
-    "blind_drivers": ["D3"],
+    "dev_drivers": [
+      "D1",
+      "D2",
+      "D4",
+      "D5",
+      "D6"
+    ],
+    "blind_drivers": [
+      "D3"
+    ],
     "blind_path": "data/raw/blind_uah"
   },
   "events": {
-    "dev_datasets": ["byd", "saboor", "shashwat", "uah_algorithmic"],
-    "blind_datasets": ["ferreira"],
-    "blind_path": "data/raw/blind_ferreira"
+    "dev_datasets": [
+      "byd",
+      "saboor",
+      "ferreira"
+    ],
+    "blind_datasets": [],
+    "_note": "Ferreira moved to dev on 2026-10-28 after the v1 blind run (see docs/BLIND_LOG.md); event blind = own recordings + PVS 7-9"
   },
   "own_recordings": {
     "blind": true,
     "blind_path": "data/raw/blind_own"
-  }
+  },
+  "pvs": {
+    "dev_trips": [
+      "PVS_1",
+      "PVS_2",
+      "PVS_3",
+      "PVS_4",
+      "PVS_5",
+      "PVS_6"
+    ],
+    "blind_trips": [
+      "PVS_7",
+      "PVS_8",
+      "PVS_9"
+    ],
+    "blind_path": "data/raw/blind_pvs",
+    "_note": "PVS 7-9 = vehicle 3 / driver 3, never seen in dev; used for false events per hour in normal driving"
+  },
+  "changes": [
+    {
+      "date": "2026-10-28",
+      "change": "Ferreira blind -> dev; PVS 7-9 added as blind",
+      "reason": "v1 blind run showed event detection fails on an unseen sensor; diagnosing it requires a third sensor in dev. Ferreira results after this date are dev numbers, not blind."
+    }
+  ]
 }

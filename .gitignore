@@ -33,3 +33,8 @@ venv/
 data/
 kaggle/octa-data/*
 !kaggle/octa-data/dataset-metadata.json
+
+# Demo build outputs
+app/dist/
+data/cache/
+!app/static/data/

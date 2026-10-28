@@ -20,7 +20,9 @@ HARSH_LAT_G = 0.30   # harsh cornering
 def resample_trip(gps: pd.DataFrame, acc: pd.DataFrame) -> pd.DataFrame:
     t = np.arange(max(gps.t.min(), acc.t.min()), min(gps.t.max(), acc.t.max()), 1 / HZ)
     d = pd.DataFrame({"t": t})
-    d["speed"] = np.interp(t, gps.t, gps.speed)
+    # 3-fix median: single-fix GPS speed glitches otherwise look like harsh brakes (PVS dev: 10-18/100 km)
+    speed = gps.speed.rolling(3, center=True, min_periods=1).median()
+    d["speed"] = np.interp(t, gps.t, speed)
     course = np.degrees(np.unwrap(np.radians(gps.course.to_numpy())))
     d["course"] = np.interp(t, gps.t, course)
     if "speed_limit" in gps and gps.speed_limit.notna().any():
@@ -49,6 +51,22 @@ def _events(mask: pd.Series, min_s: float = 1.0) -> int:
     edges = np.diff(np.r_[0, m, 0])
     lengths = np.flatnonzero(edges == -1) - np.flatnonzero(edges == 1)
     return int(np.sum(lengths >= min_s * HZ))
+
+
+def harsh_events(d: pd.DataFrame, min_s: float = 1.0) -> pd.DataFrame:
+    """Located GPS-derived harsh events (same thresholds/persistence as the window counts)."""
+    rows = []
+    for kind, mask, sig in (("harsh_brake", d.lon_g < -HARSH_LON_G, d.lon_g),
+                            ("harsh_accel", d.lon_g > HARSH_LON_G, d.lon_g),
+                            ("harsh_turn", d.lat_g.abs() > HARSH_LAT_G, d.lat_g.abs())):
+        m = mask.to_numpy().astype(int)
+        edges = np.diff(np.r_[0, m, 0])
+        for a, b in zip(np.flatnonzero(edges == 1), np.flatnonzero(edges == -1)):
+            if b - a >= min_s * HZ:
+                peak = float(sig.iloc[a:b].abs().max())
+                rows.append(dict(type=kind, t0=float(d.t.iloc[a]), t1=float(d.t.iloc[b - 1]),
+                                 peak_g=round(peak, 2), speed_kmh=round(float(d.speed.iloc[a]), 1)))
+    return pd.DataFrame(rows, columns=["type", "t0", "t1", "peak_g", "speed_kmh"])
 
 
 def window_features(d: pd.DataFrame, win_s: int = 60, step_s: int = 15) -> pd.DataFrame:

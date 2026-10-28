@@ -15,6 +15,40 @@ Plan and blind protocol: `docs/PLAN.md`. Every blind run: `docs/BLIND_LOG.md`.
 The pooled-CV number (0.77) overstated the event detector; the cross-dataset dev number (≤0.38)
 predicted the blind result well. Lesson: for anything that must work on a new phone, trust cross-dataset numbers.
 
+## Milestone v2 (event detector redesign + whole engine), 2026-10-28
+
+**Diagnosis of the v1 failure (on Ferreira, moved to dev):** Ferreira data is in Earth coordinates, so the car's
+forward axis rotates with every turn and a fixed alignment cannot work (turn correlation 0.02–0.27 vs 0.86 on BYD).
+Heading de-rotation and chunked alignment helped only partly (0.35). Labelled harsh brakes in the three datasets
+range from −0.9 to −3.7 m/s², so no single textbook threshold fits.
+
+**Redesign (all choices on leave-one-dataset-out dev results):** alignment-free features (|horizontal accel| needs only
+gravity; yaw rate needs only gyro · up), brake and accel merged into "harsh speed change" (GPS speed decides which),
+noise/gain augmentation, PVS 1–6 as normal-driving negatives.
+
+| Held-out dataset | Speed change F1 | Turn F1 | Lane change F1 |
+|---|---|---|---|
+| aligned features, no augmentation (mean) | | | 0.31 overall |
+| alignment-free + augmentation (mean) | | | **0.47 overall** |
+| v2 final: BYD | 0.75 | n/a | 0.00 |
+| v2 final: Ferreira | 0.63 | **0.98** | 0.15 |
+| v2 final: saboor | 0.09 | 0.62 | 0.00 |
+| v2 final: PVS (normal driving, held out) | 320 false IMU events/hour before GPS confirmation | | |
+
+Lane changes do not transfer between sensors: shown to the user, never scored.
+
+**Whole-engine blind run on PVS 7–9 (pre-registered pass: ≤ 2 confirmed harsh events/hour and all scores ≥ 80):
+FAILED** with 4.2/h and scores 95.6 / 69.8 / 79.3. Diagnosis on PVS dev trips: the score's GPS-derived harsh brakes
+came from single-fix GPS speed glitches, and the per-100-km rate exploded on short trips (one event on 10 km = 40 points).
+Fixes, verified on dev only: 3-fix median on GPS speed; credibility-smoothed event rate n / (km + 25) × 100.
+After the fixes: PVS dev normal drives score 81–97; UAH dev ordering unchanged (score AUC 0.90, 50/54 pairs).
+PVS 7–9 are now used; the next blind check of the engine is our own Latvian recordings.
+
+## Demo
+
+`app/` replays 43 trips through the engine (`app/build_demo.py`). Score by actual style (UAH): normal 92.4,
+drowsy 72.7, aggressive 56.5 on average (training drivers included; the unseen driver D3 is marked in the UI).
+
 ## Style model (`src/train_driving.py`, frozen `models/style_gbm`)
 
 UAH-DriveSet, dev drivers D1, D2, D4, D5, D6 (33 trips), 60 s windows, leave-one-driver-out.

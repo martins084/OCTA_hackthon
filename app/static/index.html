@@ -1,0 +1,742 @@
+<title>OCTA Drive Score</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an instrument-panel app. Trip list | route canvas | score column; stacks on phones.
+   Road-signage vernacular: condensed sign type, red-ringed limit sign, asphalt neutrals, marking amber. */
+:root {
+  --bg: #eceef1;          /* concrete */
+  --panel: #f8f9fa;
+  --ink: #161b22;          /* asphalt ink */
+  --muted: #5b6573;
+  --line: #d3d8de;
+  --accent: #c98a00;       /* road-marking amber */
+  --accent-ink: #1b1400;
+  --good: #1f8a5b;
+  --warn: #c98a00;
+  --bad: #c2362f;
+  --info: #5a55c8;
+  --route-faint: #c3c9d1;
+  --sign-ring: #d22b2b;
+  --sign-face: #ffffff;
+  --sign-ink: #111111;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1217; --panel: #171b22; --ink: #e6e9ee; --muted: #98a2b1; --line: #2a313b;
+  --accent: #f0b429; --accent-ink: #1b1400; --good: #3fbf87; --warn: #f0b429; --bad: #f0645c; --info: #9a95ff;
+  --route-faint: #343c48; --sign-face: #f3f3f3; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1217; --panel: #171b22; --ink: #e6e9ee; --muted: #98a2b1; --line: #2a313b;
+  --accent: #f0b429; --accent-ink: #1b1400; --good: #3fbf87; --warn: #f0b429; --bad: #f0645c; --info: #9a95ff;
+  --route-faint: #343c48; --sign-face: #f3f3f3; color-scheme: dark }
+
+* { box-sizing: border-box }
+[hidden] { display: none !important }
+body { margin: 0 }
+html, body { height: 100% }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg) }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: .01em; margin: 0; text-wrap: balance; line-height: 1.1 }
+.wrap { max-width: 1440px; margin: 0 auto; padding-block: 18px 40px; display: grid; gap: 18px }
+.num { font-variant-numeric: tabular-nums }
+.mono { font-family: var(--f-mono); font-size: 13px }
+.label { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600 }
+button, select, input { font: inherit; color: inherit }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+
+/* header */
+header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; justify-content: space-between;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px }
+.brand { display: flex; align-items: center; gap: 12px }
+.brand h1 { font-size: 30px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em }
+.brand .tag { font-size: 13px; color: var(--muted); max-width: 34ch; line-height: 1.3 }
+.mark { width: 34px; height: 34px; border-radius: 6px; background: var(--accent); display: grid; place-items: center; color: var(--accent-ink);
+  font: 700 18px/1 var(--f-display) }
+nav.tabs { display: flex; gap: 4px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 4px }
+nav.tabs button { border: 0; background: transparent; padding: 7px 16px; border-radius: 999px; cursor: pointer; font-weight: 500; color: var(--muted) }
+nav.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg) }
+
+/* replay layout */
+.replay { display: grid; grid-template-columns: 250px minmax(0, 1fr) 340px; gap: 18px; align-items: start }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r) }
+.triplist { padding: 10px; display: grid; gap: 14px; max-height: calc(100vh - 120px); overflow: auto; position: sticky; top: 76px }
+.triplist .group { display: grid; gap: 4px }
+.triplist .group > .label { padding: 4px 8px }
+.trip { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; text-align: left; width: 100%; border: 1px solid transparent;
+  background: transparent; border-radius: 8px; padding: 8px; cursor: pointer }
+.trip:hover { background: var(--bg) }
+.trip[aria-current="true"] { border-color: var(--ink); background: var(--bg) }
+.trip .t { font-weight: 600; font-size: 14px; line-height: 1.25 }
+.trip .s { grid-column: 1; font-size: 12px; color: var(--muted) }
+.trip .sc { grid-row: 1 / span 2; grid-column: 2; align-self: center; font: 600 22px/1 var(--f-display) }
+.tripselect { display: none }
+
+.stage { display: grid; gap: 12px; min-width: 0 }
+.mapbox { position: relative; overflow: hidden; padding: 0 }
+.maphead { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; padding: 14px 16px 0 }
+.maphead h2 { font-size: 26px }
+.maphead .sub { color: var(--muted); font-size: 13px }
+canvas#map { display: block; width: 100%; height: 460px }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 0 16px 14px; font-size: 12px; color: var(--muted) }
+.legend i { display: inline-block; width: 18px; height: 4px; border-radius: 2px; vertical-align: middle; margin-right: 6px }
+.legend b { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; color: #fff; font: 700 10px/1 var(--f-body); margin-right: 6px; vertical-align: middle }
+
+.dash { display: grid; grid-template-columns: auto auto 1fr; gap: 16px; align-items: center; padding: 12px 16px }
+.speed { display: grid; line-height: 1 }
+.speed .v { font: 700 54px/0.9 var(--f-display) }
+.speed .u { font-size: 12px; color: var(--muted) }
+.sign { width: 62px; height: 62px; border-radius: 50%; background: var(--sign-face); border: 7px solid var(--sign-ring);
+  display: grid; place-items: center; color: var(--sign-ink); font: 700 24px/1 var(--f-display) }
+.sign.none { border-color: var(--line); color: var(--muted); font-size: 12px; text-align: center }
+.controls { display: grid; gap: 8px; min-width: 0 }
+.ctrlrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
+.btn { border: 1px solid var(--ink); background: var(--ink); color: var(--bg); border-radius: 999px; padding: 7px 16px; cursor: pointer; font-weight: 600 }
+.btn.ghost { background: transparent; color: var(--ink) }
+.btn:disabled { opacity: .5; cursor: default }
+select.rate { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 6px 10px }
+input[type=range] { width: 100%; accent-color: var(--accent) }
+.clock { color: var(--muted) }
+
+.events { padding: 12px 16px; display: grid; gap: 8px }
+.evlist { display: grid; gap: 2px; max-height: 220px; overflow: auto }
+.ev { display: grid; grid-template-columns: 64px 22px 1fr auto; gap: 8px; align-items: center; padding: 6px 4px; border-radius: 6px; font-size: 13.5px; cursor: pointer; border: 0; background: transparent; text-align: left; width: 100% }
+.ev:hover { background: var(--bg) }
+.ev.future { opacity: .38 }
+.dot { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; color: #fff; font: 700 10px/1 var(--f-body) }
+.pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap }
+.pill.ok { border-color: var(--good); color: var(--good) }
+.pill.no { border-color: var(--bad); color: var(--bad) }
+
+/* score column */
+.scorecol { display: grid; gap: 12px; position: sticky; top: 76px }
+.scorecard { padding: 16px; display: grid; gap: 10px }
+.scoreline { display: flex; align-items: flex-end; gap: 14px }
+.score { font: 700 104px/0.82 var(--f-display); letter-spacing: -.01em }
+.band { display: grid; gap: 4px; padding-bottom: 6px }
+.grade { font: 700 22px/1 var(--f-display); padding: 4px 10px; border-radius: 6px; color: #fff; width: max-content }
+.bandtext { font-size: 13px; color: var(--muted) }
+svg.spark { width: 100%; height: 70px; display: block }
+.reasons { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 14px }
+.reasons li { padding-left: 14px; position: relative }
+.reasons li::before { content: ""; position: absolute; left: 0; top: .6em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent) }
+.reasons li.clean::before { background: var(--good) }
+.stylebar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--line) }
+.stylebar span { display: block; height: 100% }
+.stylekey { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted) }
+.stylekey i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px }
+
+.whatif { padding: 16px; display: grid; gap: 12px }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--bg); border-radius: 8px; padding: 3px; gap: 3px }
+.seg button { border: 0; background: transparent; border-radius: 6px; padding: 7px 4px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted) }
+.seg button[aria-pressed="true"] { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12) }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; font-size: 14px; margin: 0 }
+.kv dt { color: var(--muted) }
+.kv dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600 }
+.premium { display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid var(--line); padding-top: 10px }
+.premium .eur { font: 700 36px/1 var(--f-display) }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; align-content: flex-start }
+.chip { font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; color: var(--muted); background: var(--panel) }
+.note { font-size: 12px; color: var(--muted); line-height: 1.45 }
+
+/* portfolio + evidence */
+.section { padding: 18px; display: grid; gap: 14px; min-width: 0 }
+.section h2 { font-size: 26px }
+.lede { color: var(--muted); max-width: 72ch; margin: 0 }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: start }
+.tablewrap { overflow-x: auto }
+table { border-collapse: collapse; width: 100%; font-size: 14px }
+th { text-align: left; font-size: 11.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap }
+td { padding: 9px 10px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; vertical-align: top }
+td.r, th.r { text-align: right }
+tr.clickable { cursor: pointer }
+tr.clickable:hover td { background: var(--bg) }
+.tier { display: inline-block; min-width: 26px; text-align: center; font: 700 15px/1 var(--f-display); padding: 4px 6px; border-radius: 5px; color: #fff }
+svg.strip { width: 100%; height: auto; display: block }
+.verdict { font-weight: 600 }
+.verdict.ok { color: var(--good) } .verdict.bad { color: var(--bad) } .verdict.mid { color: var(--warn) }
+
+/* analyse */
+.drop { border: 2px dashed var(--line); border-radius: var(--r); padding: 28px; text-align: center; display: grid; gap: 8px; place-items: center; cursor: pointer }
+.drop.over { border-color: var(--accent) }
+.status { font-size: 14px; min-height: 1.5em }
+.status.err { color: var(--bad) }
+
+@media (max-width: 1180px) {
+  .replay { grid-template-columns: minmax(0, 1fr) 320px }
+  .triplist { display: none }
+  .tripselect { display: block; width: 100%; padding: 10px; border-radius: var(--r); border: 1px solid var(--line); background: var(--panel); grid-column: 1 / -1 }
+}
+@media (max-width: 860px) {
+  .replay, .grid2 { grid-template-columns: minmax(0, 1fr) }
+  .scorecol { position: static }
+  canvas#map { height: 340px }
+  .score { font-size: 84px }
+  .dash { grid-template-columns: auto auto; }
+  .controls { grid-column: 1 / -1 }
+  .brand .tag { display: none }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">O</div>
+      <div><h1>OCTA Drive Score</h1></div>
+      <div class="tag">Phone sensors in, a fair driving score and an OCTA risk factor out.</div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Views">
+      <button role="tab" id="tab-replay" aria-selected="true" data-view="replay">Trip replay</button>
+      <button role="tab" id="tab-portfolio" aria-selected="false" data-view="portfolio">OCTA portfolio</button>
+      <button role="tab" id="tab-evidence" aria-selected="false" data-view="evidence">Evidence</button>
+      <button role="tab" id="tab-analyse" aria-selected="false" data-view="analyse" hidden>Analyse a trip</button>
+    </nav>
+  </header>
+
+  <!-- ============ REPLAY ============ -->
+  <section id="view-replay" class="replay" role="tabpanel" aria-labelledby="tab-replay">
+    <aside class="panel triplist" id="triplist" aria-label="Trips"></aside>
+    <select class="tripselect" id="tripselect" aria-label="Choose a trip"></select>
+
+    <div class="stage">
+      <div class="panel mapbox">
+        <div class="maphead">
+          <div><h2 id="trip-title">Loading trips…</h2><div class="sub" id="trip-sub"></div></div>
+          <div class="chips" id="trip-chips"></div>
+        </div>
+        <canvas id="map" aria-label="Route map with speed and events"></canvas>
+        <div class="legend">
+          <span><i style="background:var(--good)"></i>within limit</span>
+          <span><i style="background:var(--warn)"></i>&gt;10% over</span>
+          <span><i style="background:var(--bad)"></i>&gt;20 km/h over</span>
+          <span><i style="background:var(--muted)"></i>limit unknown</span>
+          <span><b style="background:var(--bad)">B</b>harsh brake</span>
+          <span><b style="background:var(--warn)">A</b>harsh acceleration</span>
+          <span><b style="background:var(--info)">T</b>sharp turn</span>
+        </div>
+      </div>
+
+      <div class="panel dash">
+        <div class="speed"><span class="v num" id="spd">0</span><span class="u">km/h</span></div>
+        <div class="sign" id="limit" aria-label="Speed limit">50</div>
+        <div class="controls">
+          <div class="ctrlrow">
+            <button class="btn" id="play">Play trip</button>
+            <button class="btn ghost" id="end">Show result</button>
+            <select class="rate" id="rate" aria-label="Replay speed">
+              <option value="20">20× speed</option>
+              <option value="60" selected>60× speed</option>
+              <option value="150">150× speed</option>
+            </select>
+            <span class="clock mono" id="clock">00:00 / 00:00</span>
+          </div>
+          <input type="range" id="scrub" min="0" max="1000" value="1000" aria-label="Trip position">
+        </div>
+      </div>
+
+      <div class="panel events">
+        <div class="ctrlrow" style="justify-content:space-between"><span class="label">Events on this trip</span><span class="note" id="ev-note"></span></div>
+        <div class="evlist" id="evlist"></div>
+      </div>
+    </div>
+
+    <div class="scorecol">
+      <div class="panel scorecard">
+        <span class="label" id="score-label">Trip score</span>
+        <div class="scoreline">
+          <div class="score num" id="score">–</div>
+          <div class="band"><span class="grade" id="grade">–</span><span class="bandtext" id="bandtext"></span></div>
+        </div>
+        <svg class="spark" id="spark" viewBox="0 0 300 70" preserveAspectRatio="none" aria-label="Score during the trip"></svg>
+        <ul class="reasons" id="reasons"></ul>
+        <div style="display:grid;gap:6px">
+          <span class="label">Driving pattern (style model)</span>
+          <div class="stylebar" id="stylebar"></div>
+          <div class="stylekey" id="stylekey"></div>
+        </div>
+      </div>
+
+      <div class="panel whatif">
+        <span class="label">Same driving, different conditions</span>
+        <div class="seg" role="group" aria-label="Conditions">
+          <button aria-pressed="true" data-v="as_driven">As driven</button>
+          <button aria-pressed="false" data-v="at_night">At night</button>
+          <button aria-pressed="false" data-v="snowy_night">Snowy night</button>
+        </div>
+        <dl class="kv">
+          <dt>Driving score</dt><dd id="wi-score">–</dd>
+          <dt>Conditions risk (Latvian data)</dt><dd id="wi-ctx">–</dd>
+          <dt>Telematics factor</dt><dd id="wi-tel">–</dd>
+          <dt>Trip risk for OCTA</dt><dd id="wi-risk">–</dd>
+        </dl>
+        <div class="premium"><span class="label">Indicative OCTA premium / year</span><span class="eur num" id="wi-eur">–</span></div>
+        <p class="note" id="wi-note">Conditions multipliers come from 209,000 Latvian accidents (2013–2023): darkness ×1.33, light snowfall ×1.14, refreeze after a wet day ×1.03. Harsh events in risky conditions cost more points; calm driving costs nothing.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PORTFOLIO ============ -->
+  <section id="view-portfolio" role="tabpanel" aria-labelledby="tab-portfolio" hidden>
+    <div class="grid2">
+      <div class="panel section">
+        <h2>Drivers in the portfolio</h2>
+        <p class="lede">Every recorded trip scored by the same engine. The policy factor weights each trip by distance. Premiums use one identical driver and vehicle profile, so the differences you see come from driving alone.</p>
+        <div class="tablewrap"><table id="ptable"></table></div>
+        <p class="note">Tier A ≥ 85 · B 75–85 · C 60–75 · D 45–60 · E &lt; 45. Telematics factor 0.7–1.75, equal to 1.0 at score 75. Base price €120 at the portfolio-average claim frequency (illustrative). “Seen in training” means the style model learned from this driver, so those scores are optimistic.</p>
+      </div>
+      <div class="panel section">
+        <h2>Do scores separate driving styles?</h2>
+        <p class="lede">Each dot is one trip, by how it was actually driven. Filled dots are drivers the model never saw in training.</p>
+        <svg class="strip" id="strip" viewBox="0 0 520 220" role="img" aria-label="Trip scores by driving style"></svg>
+        <dl class="kv" id="sepstats"></dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ EVIDENCE ============ -->
+  <section id="view-evidence" role="tabpanel" aria-labelledby="tab-evidence" hidden>
+    <div class="grid2">
+      <div class="panel section">
+        <h2>Tested on data it never saw</h2>
+        <p class="lede">We locked test sets away before modelling and logged every look at them. Failures stay in the record, because they are what told us what to fix.</p>
+        <div class="tablewrap"><table>
+          <thead><tr><th>What</th><th>Blind test set</th><th class="r">Development</th><th class="r">Blind result</th><th>Verdict</th></tr></thead>
+          <tbody>
+            <tr><td>Driving style, trips right</td><td>Unseen driver D3, 7 trips</td><td class="r">79%</td><td class="r">86% (6/7)</td><td class="verdict ok">Holds up</td></tr>
+            <tr><td>Risky vs normal trip, AUC</td><td>Unseen driver D3</td><td class="r">0.92</td><td class="r">1.00</td><td class="verdict ok">Holds up</td></tr>
+            <tr><td>Event detector v1, F1</td><td>Brazilian phone (Ferreira)</td><td class="r">0.77</td><td class="r">0.17–0.37</td><td class="verdict bad">Failed → redesigned</td></tr>
+            <tr><td>Event detector v2, F1 on an unseen sensor</td><td>Each dataset held out in turn</td><td class="r">0.40–0.47</td><td class="r">turns 0.62–0.98</td><td class="verdict mid">Usable for turns and speed changes</td></tr>
+            <tr><td>Whole engine, false harsh events / hour</td><td>Unseen car and driver (PVS 7–9)</td><td class="r">≤ 1 per trip</td><td class="r">4.2 / h (target ≤ 2)</td><td class="verdict bad">Missed → GPS glitch filter and rate smoothing, verified on dev only</td></tr>
+            <tr><td>Insurer claim model, Gini</td><td>135,633 held-out policies</td><td class="r">GLM 0.31</td><td class="r">GBM 0.36</td><td class="verdict ok">Beats actuarial GLM</td></tr>
+          </tbody>
+        </table></div>
+        <p class="note">Next blind set: our own phone recordings on Latvian roads, collected with the protocol in docs/RECORDING.md.</p>
+      </div>
+      <div class="panel section">
+        <h2>What Latvian accident data says</h2>
+        <p class="lede">209,000 police-registered accidents (CAIS, 2013–2023) matched with hourly weather and sun position for nine towns.</p>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Condition</th><th class="r">Effect</th><th>Measured as</th></tr></thead>
+          <tbody>
+            <tr><td>Heavy snowfall day (≥ 5 cm)</td><td class="r">×1.64</td><td>accidents per day, 95% CI 1.51–1.77</td></tr>
+            <tr><td>Light snowfall day</td><td class="r">×1.14</td><td>accidents per day, CI 1.12–1.17</td></tr>
+            <tr><td>Darkness</td><td class="r">×1.33</td><td>accidents per hour driven</td></tr>
+            <tr><td>Dark road without street lights</td><td class="r">×2.8</td><td>fatality rate when an accident happens</td></tr>
+            <tr><td>Fog</td><td class="r">×1.8</td><td>chance an accident is serious</td></tr>
+            <tr><td>Refreeze after a wet day</td><td class="r">×1.03</td><td>accidents per day</td></tr>
+            <tr><td>Rain</td><td class="r">≈ ×1.0</td><td>no measurable change in frequency</td></tr>
+            <tr><td>Public holiday (sanity check)</td><td class="r">×0.67</td><td>less traffic, fewer accidents</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ANALYSE ============ -->
+  <section id="view-analyse" role="tabpanel" aria-labelledby="tab-analyse" hidden>
+    <div class="grid2">
+      <div class="panel section">
+        <h2>Analyse your own recording</h2>
+        <p class="lede">Record a drive with the free Sensor Logger app (accelerometer, gravity, gyroscope, location), export it as a zip, and drop it here.</p>
+        <label class="drop" id="drop" for="file">
+          <strong>Drop a Sensor Logger .zip here</strong>
+          <span class="note">or click to choose a file</span>
+          <input type="file" id="file" accept=".zip" hidden>
+        </label>
+        <div class="status" id="up-status" role="status"></div>
+      </div>
+      <div class="panel section">
+        <h2>Record in this browser</h2>
+        <p class="lede">Uses the phone's motion sensors and GPS directly. The passenger holds or mounts the phone; the driver only drives. Needs HTTPS on the phone.</p>
+        <div class="ctrlrow">
+          <button class="btn" id="rec">Start recording</button>
+          <button class="btn ghost" id="recstop" disabled>Stop and analyse</button>
+        </div>
+        <dl class="kv" id="recstats">
+          <dt>Duration</dt><dd id="rec-t">0:00</dd>
+          <dt>Motion samples</dt><dd id="rec-n">0</dd>
+          <dt>GPS fixes</dt><dd id="rec-g">0</dd>
+        </dl>
+        <div class="status" id="rec-status" role="status"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const DATA = window.__DEMO_DATA__ || null;          // embedded build: {trips: [...], details: {id: report}}
+const state = { trips: [], cur: null, t: 0, playing: false, variant: "as_driven", raf: 0, last: 0, cache: {} };
+
+/* ---------- formatting ---------- */
+const fmtT = s => { s = Math.max(0, Math.round(s)); return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}` };
+const grade = s => s >= 85 ? ["A", "--good", "Smooth, low-risk driving"] : s >= 75 ? ["B", "--good", "Good, a few things to watch"]
+  : s >= 60 ? ["C", "--warn", "Noticeable risk-taking"] : s >= 45 ? ["D", "--bad", "Risky driving"] : ["E", "--bad", "High-risk driving"];
+const EV = {
+  harsh_brake: { k: "B", c: "--bad", n: "Harsh brake" }, harsh_accel: { k: "A", c: "--warn", n: "Harsh acceleration" },
+  harsh_turn: { k: "T", c: "--info", n: "Sharp turn" }, turn: { k: "T", c: "--info", n: "Sharp turn (IMU)" },
+  lane_change: { k: "L", c: "--muted", n: "Lane change (shown, not scored)" }
+};
+
+/* ---------- data ---------- */
+async function getJSON(path) {
+  if (DATA) return path === "data/trips.json" ? DATA.trips : DATA.details[path.replace(/^data\/trip_|\.json$/g, "")];
+  const r = await fetch(path); if (!r.ok) throw new Error(`${path}: ${r.status}`); return r.json();
+}
+async function detail(id) {
+  if (!state.cache[id]) state.cache[id] = await getJSON(`data/trip_${id}.json`);
+  return state.cache[id];
+}
+
+/* ---------- trip list ---------- */
+function groupName(t) {
+  if (t.tags.source === "PVS") return "Rough roads · Brazil";
+  return t.tags.seen_in_training ? `Driver ${t.tags.driver} · in training` : `Driver ${t.tags.driver} · never seen by the model`;
+}
+function renderList() {
+  const replay = state.trips.filter(t => t.tags.replay);
+  const groups = {};
+  replay.forEach(t => (groups[groupName(t)] ||= []).push(t));
+  const list = $("#triplist"), sel = $("#tripselect");
+  list.innerHTML = ""; sel.innerHTML = "";
+  for (const [g, ts] of Object.entries(groups)) {
+    const box = document.createElement("div"); box.className = "group";
+    box.innerHTML = `<span class="label">${g}</span>`;
+    const og = document.createElement("optgroup"); og.label = g;
+    ts.sort((a, b) => b.score - a.score).forEach(t => {
+      const b = document.createElement("button"); b.className = "trip"; b.dataset.id = t.id;
+      const [, c] = grade(t.score);
+      b.innerHTML = `<span class="t">${t.tags.label} · ${t.tags.road}</span><span class="s">${t.km} km · ${Math.round(t.minutes)} min</span><span class="sc num" style="color:var(${c})">${Math.round(t.score)}</span>`;
+      b.onclick = () => open(t.id);
+      box.appendChild(b);
+      const o = document.createElement("option"); o.value = t.id; o.textContent = `${t.tags.label} · ${t.tags.road} · ${Math.round(t.score)}`; og.appendChild(o);
+    });
+    list.appendChild(box); sel.appendChild(og);
+  }
+  sel.onchange = () => open(sel.value);
+}
+
+/* ---------- map ---------- */
+const map = { cv: $("#map"), proj: null };
+function project(track) {
+  const r = map.cv.getBoundingClientRect(), pad = 28;
+  const lat0 = track.reduce((a, p) => a + p.lat, 0) / track.length, k = Math.cos(lat0 * Math.PI / 180);
+  const xs = track.map(p => p.lon * k), ys = track.map(p => p.lat);
+  const minx = Math.min(...xs), maxx = Math.max(...xs), miny = Math.min(...ys), maxy = Math.max(...ys);
+  const s = Math.min((r.width - 2 * pad) / (maxx - minx || 1e-6), (r.height - 2 * pad) / (maxy - miny || 1e-6));
+  const ox = (r.width - (maxx - minx) * s) / 2, oy = (r.height - (maxy - miny) * s) / 2;
+  return (lat, lon) => [ox + (lon * k - minx) * s, r.height - (oy + (lat - miny) * s)];
+}
+function segColor(p) {
+  if (p.limit == null) return css("--muted");
+  if (p.speed > p.limit + 20) return css("--bad");
+  if (p.speed > p.limit * 1.1) return css("--warn");
+  return css("--good");
+}
+function allEvents(d) {
+  const g = (d.gps_events || []).map(e => ({ ...e, src: "gps" }));
+  const i = (d.imu_events || []).filter(e => e.type !== "lane_change" && e.gps_confirmed).map(e => ({ ...e, src: "imu" }));
+  return [...g, ...i].sort((a, b) => a.t0 - b.t0);
+}
+function drawMap() {
+  const d = state.cur; if (!d) return;
+  const cv = map.cv, dpr = window.devicePixelRatio || 1, r = cv.getBoundingClientRect();
+  cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+  const tr = d.track; if (!tr.length) return;
+  map.proj = project(tr); const P = map.proj;
+  // faint grid
+  ctx.strokeStyle = css("--line"); ctx.lineWidth = 1; ctx.globalAlpha = .55;
+  for (let x = 0; x < r.width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, r.height); ctx.stroke() }
+  for (let y = 0; y < r.height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(r.width, y); ctx.stroke() }
+  ctx.globalAlpha = 1; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  // full route
+  ctx.strokeStyle = css("--route-faint"); ctx.lineWidth = 7; ctx.beginPath();
+  tr.forEach((p, i) => { const [x, y] = P(p.lat, p.lon); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y) }); ctx.stroke();
+  // driven part, coloured by speed vs limit
+  ctx.lineWidth = 4.5;
+  for (let i = 1; i < tr.length && tr[i].t <= state.t; i++) {
+    const [x0, y0] = P(tr[i - 1].lat, tr[i - 1].lon), [x1, y1] = P(tr[i].lat, tr[i].lon);
+    ctx.strokeStyle = segColor(tr[i]); ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+  }
+  // start / finish
+  const [sx, sy] = P(tr[0].lat, tr[0].lon), [ex, ey] = P(tr.at(-1).lat, tr.at(-1).lon);
+  ctx.fillStyle = css("--ink"); ctx.font = `600 11px ${css("--f-body")}`;
+  const label = (txt, x, y) => { const w = ctx.measureText(txt).width; ctx.fillText(txt, x + 8 + w > r.width - 4 ? x - 8 - w : x + 8, y) };
+  const loop = Math.hypot(ex - sx, ey - sy) < 36;          // round trip: one label, not two on top of each other
+  ctx.fillRect(sx - 4, sy - 4, 8, 8); label(loop ? "START · FINISH" : "START", sx, sy + 22);
+  if (!loop) { ctx.beginPath(); ctx.arc(ex, ey, 5, 0, 7); ctx.fill(); label("FINISH", ex, ey + 14) }
+  // events reached so far
+  for (const e of allEvents(d)) {
+    if (e.t0 > state.t) continue;
+    const m = EV[e.type] || EV.harsh_brake, [x, y] = P(e.lat, e.lon);
+    ctx.fillStyle = css(m.c); ctx.beginPath(); ctx.arc(x, y, 9, 0, 7); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.font = `700 10px ${css("--f-body")}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(m.k, x, y + .5); ctx.textAlign = "start"; ctx.textBaseline = "alphabetic";
+  }
+  // car
+  const p = posAt(state.t), [cx, cy] = P(p.lat, p.lon);
+  ctx.fillStyle = css("--accent"); ctx.globalAlpha = .25; ctx.beginPath(); ctx.arc(cx, cy, 16, 0, 7); ctx.fill();
+  ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(cx, cy, 7, 0, 7); ctx.fill();
+  ctx.strokeStyle = css("--panel"); ctx.lineWidth = 2; ctx.stroke();
+}
+function posAt(t) {
+  const tr = state.cur.track; let i = tr.findIndex(p => p.t >= t); if (i < 0) i = tr.length - 1;
+  return tr[Math.max(0, i)];
+}
+
+/* ---------- score column ---------- */
+function scoreAt(t) {
+  const tl = state.cur.timeline; if (!tl.length) return state.cur.score;
+  if (t >= tl.at(-1).t) return state.cur.score;
+  let s = null; for (const p of tl) { if (p.t <= t) s = p.score; else break }
+  return s;
+}
+function renderSpark() {
+  const d = state.cur, svg = $("#spark"), tl = d.timeline, T = tEnd();
+  if (!tl.length) { svg.innerHTML = ""; return }
+  const t0 = d.track[0].t, X = t => (t - t0) / (T - t0 || 1) * 300, Y = s => 66 - s / 100 * 62;
+  const pts = tl.map(p => `${X(p.t).toFixed(1)},${Y(p.score).toFixed(1)}`).join(" ");
+  const cut = state.t, done = tl.filter(p => p.t <= cut);
+  const ptsDone = done.map(p => `${X(p.t).toFixed(1)},${Y(p.score).toFixed(1)}`).join(" ");
+  const last = done.at(-1);
+  svg.innerHTML = `
+    ${[25, 50, 75].map(v => `<line x1="0" x2="300" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1" vector-effect="non-scaling-stroke"/>`).join("")}
+    <polyline points="${pts}" fill="none" stroke="var(--route-faint)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+    ${done.length > 1 ? `<polygon points="${X(done[0].t)},66 ${ptsDone} ${X(last.t)},66" fill="var(--accent)" fill-opacity=".14"/>
+    <polyline points="${ptsDone}" fill="none" stroke="var(--accent)" stroke-width="2.5" vector-effect="non-scaling-stroke"/>` : ""}
+    ${last ? `<circle cx="${X(last.t)}" cy="${Y(last.score)}" r="3.5" fill="var(--accent)"/>` : ""}`;
+}
+function renderScore() {
+  const d = state.cur, done = state.t >= tEnd() - 0.01, s = scoreAt(state.t);
+  $("#score-label").textContent = done ? "Trip score" : "Score so far";
+  $("#score").textContent = s == null ? "–" : Math.round(s);
+  const [g, c, txt] = grade(s ?? d.score);
+  const gEl = $("#grade"); gEl.textContent = s == null ? "…" : g; gEl.style.background = `var(${c})`;
+  $("#score").style.color = s == null ? "var(--muted)" : `var(${c})`;
+  $("#bandtext").textContent = s == null ? "Scoring starts after the first minute" : txt;
+  renderSpark();
+  const v = d.what_if?.[state.variant] || {};
+  const reasons = done ? (v.reasons || d.reasons) : [];
+  $("#reasons").innerHTML = done ? (reasons.length ? reasons.map(r => `<li>${cap(r)}</li>`).join("")
+    : `<li class="clean">No harsh events, no speeding, calm pattern.</li>`) : `<li class="clean">Watching the drive…</li>`;
+}
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+function renderStyle() {
+  const p = state.cur.style_probabilities, cols = { NORMAL: "--good", AGGRESSIVE: "--bad", DROWSY: "--info" };
+  $("#stylebar").innerHTML = Object.entries(p).map(([k, v]) => `<span style="width:${v * 100}%;background:var(${cols[k]})"></span>`).join("");
+  $("#stylekey").innerHTML = Object.entries(p).map(([k, v]) => `<span><i style="background:var(${cols[k]})"></i>${cap(k.toLowerCase())} ${Math.round(v * 100)}%</span>`).join("");
+}
+function renderWhatIf() {
+  const d = state.cur, v = d.what_if?.[state.variant]; if (!v) return;
+  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === state.variant));
+  $("#wi-score").textContent = Math.round(v.score);
+  $("#wi-ctx").textContent = `×${v.context_multiplier.toFixed(2)}`;
+  $("#wi-tel").textContent = `×${v.insurer_multiplier.toFixed(2)}`;
+  $("#wi-risk").textContent = `×${v.trip_risk.toFixed(2)}`;
+  const pr = d.premium; if (pr) {
+    const eur = 120 * pr.profile_factor * v.insurer_multiplier;
+    $("#wi-eur").textContent = `€${Math.round(eur)}`;
+  }
+  renderScore();
+}
+
+/* ---------- events list ---------- */
+function renderEvents() {
+  const d = state.cur, evs = allEvents(d), lanes = (d.imu_events || []).filter(e => e.type === "lane_change").length;
+  const rejected = d.imu_events_rejected_by_gps || 0;
+  $("#ev-note").textContent = [lanes ? `${lanes} lane changes noted, not scored` : "", rejected ? `${rejected} IMU alarms rejected by GPS` : ""].filter(Boolean).join(" · ");
+  $("#evlist").innerHTML = evs.length ? evs.map((e, i) => {
+    const m = EV[e.type] || EV.harsh_brake;
+    const detail = e.peak_g != null ? `${e.peak_g.toFixed(2)} g at ${Math.round(e.speed_kmh)} km/h` : `${e.speed_change_kmh > 0 ? "+" : ""}${e.speed_change_kmh} km/h`;
+    const badge = e.src === "gps" ? `<span class="pill">GPS</span>` : `<span class="pill ok">IMU + GPS</span>`;
+    return `<button class="ev ${e.t0 > state.t ? "future" : ""}" data-t="${e.t0}"><span class="mono">${fmtT(e.t0 - d.track[0].t)}</span><span class="dot" style="background:var(${m.c})">${m.k}</span><span>${m.n} <span class="note">${detail}</span></span>${badge}</button>`;
+  }).join("") : `<div class="note" style="padding:6px 4px">No harsh events detected on this trip.</div>`;
+  document.querySelectorAll(".ev").forEach(b => b.onclick = () => { pause(); seek(+b.dataset.t + 2) });
+}
+
+/* ---------- dash + playback ---------- */
+const tEnd = () => state.cur.track.at(-1).t;
+function renderDash() {
+  const d = state.cur, p = posAt(state.t), t0 = d.track[0].t;
+  $("#spd").textContent = Math.round(p.speed);
+  const L = $("#limit");
+  if (p.limit == null) { L.className = "sign none"; L.textContent = "no data" } else { L.className = "sign"; L.textContent = Math.round(p.limit) }
+  $("#clock").textContent = `${fmtT(state.t - t0)} / ${fmtT(tEnd() - t0)}`;
+  $("#scrub").value = Math.round((state.t - t0) / (tEnd() - t0) * 1000);
+  document.querySelectorAll(".ev").forEach(b => b.classList.toggle("future", +b.dataset.t > state.t));
+}
+function frame(now) {
+  if (!state.playing) return;
+  const dt = (now - state.last) / 1000; state.last = now;
+  state.t = Math.min(tEnd(), state.t + dt * +$("#rate").value);
+  render();
+  if (state.t >= tEnd()) { pause(); return }
+  state.raf = requestAnimationFrame(frame);
+}
+function play() {
+  if (state.t >= tEnd()) state.t = state.cur.track[0].t;
+  state.playing = true; state.last = performance.now(); $("#play").textContent = "Pause";
+  state.raf = requestAnimationFrame(frame);
+}
+function pause() {
+  state.playing = false; cancelAnimationFrame(state.raf);
+  if (state.cur) $("#play").textContent = state.t >= tEnd() ? "Replay trip" : "Resume";
+}
+function seek(t) { state.t = Math.max(state.cur.track[0].t, Math.min(tEnd(), t)); render() }
+function render() { drawMap(); renderDash(); renderScore() }
+
+/* ---------- open trip ---------- */
+async function open(id) {
+  pause();
+  const d = await detail(id); state.cur = d; state.t = tEnd(); state.variant = "as_driven";
+  document.querySelectorAll(".trip").forEach(b => b.setAttribute("aria-current", b.dataset.id === id));
+  $("#tripselect").value = id;
+  $("#trip-title").textContent = d.title; $("#trip-sub").textContent = d.subtitle;
+  const c = d.context || {}, ch = [];
+  if (c.start) ch.push(new Date(c.start).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }));
+  if (c.tmin != null) ch.push(`${Math.round(c.tmin)}°C min`);
+  ch.push(c.precipitation_mm > 0.2 ? `${c.precipitation_mm.toFixed(1)} mm rain` : "dry");
+  if (c.snowfall_cm > 0) ch.push(`${c.snowfall_cm} cm snow`);
+  ch.push(c.dark_share > 0.5 ? "in darkness" : c.dark_share > 0 ? `${Math.round(c.dark_share * 100)}% dark` : "daylight");
+  ch.push(`${d.trip.distance_km} km · ${Math.round(d.trip.mean_speed_kmh)} km/h avg`);
+  $("#trip-chips").innerHTML = ch.map(x => `<span class="chip">${x}</span>`).join("");
+  renderStyle(); renderEvents(); renderWhatIf(); render();
+  $("#play").textContent = "Play trip";
+}
+
+/* ---------- portfolio ---------- */
+const factor = s => s >= 75 ? Math.exp(-0.0123 * (s - 75)) : Math.exp(-0.0075 * (s - 75));
+function renderPortfolio() {
+  const by = {};
+  state.trips.forEach(t => (by[t.tags.driver] ||= []).push(t));
+  const rows = Object.entries(by).map(([drv, ts]) => {
+    const km = ts.reduce((a, t) => a + t.km, 0), sc = ts.reduce((a, t) => a + t.score * t.km, 0) / km;
+    const f = ts.reduce((a, t) => a + t.insurer_multiplier * t.km, 0) / km;
+    const prof = ts[0].premium?.profile_factor ?? 1;
+    return { drv, n: ts.length, km, sc, f, eur: 120 * prof * f, seen: ts[0].tags.seen_in_training, src: ts[0].tags.source, first: ts.slice().sort((a, b) => a.score - b.score)[0] };
+  }).sort((a, b) => b.sc - a.sc);
+  $("#ptable").innerHTML = `<thead><tr><th>Driver</th><th class="r">Trips</th><th class="r">km</th><th class="r">Score</th><th>Tier</th><th class="r">Factor</th><th class="r">€ / year</th><th>Note</th></tr></thead><tbody>` +
+    rows.map(r => { const [g, c] = grade(r.sc); return `<tr class="clickable" data-id="${r.first.id}" data-replay="${r.first.tags.replay}"><td><strong>${r.drv}</strong> <span class="note">${r.src === "PVS" ? "Brazil" : "Madrid"}</span></td><td class="r">${r.n}</td><td class="r">${r.km.toFixed(0)}</td><td class="r">${r.sc.toFixed(1)}</td><td><span class="tier" style="background:var(${c})">${g}</span></td><td class="r">×${r.f.toFixed(2)}</td><td class="r">€${Math.round(r.eur)}</td><td class="note">${r.seen ? "seen in training" : "never seen"}</td></tr>` }).join("") + "</tbody>";
+  document.querySelectorAll("#ptable tr.clickable").forEach(tr => tr.onclick = () => { if (tr.dataset.replay === "true") { show("replay"); open(tr.dataset.id) } });
+  renderStrip();
+}
+function renderStrip() {
+  const svg = $("#strip"), labels = ["Normal", "Drowsy", "Aggressive"], cols = { Normal: "--good", Drowsy: "--info", Aggressive: "--bad" };
+  const L = 92, R = 500, X = s => L + s / 100 * (R - L), rowY = i => 36 + i * 56;
+  let out = "";
+  [0, 25, 50, 75, 100].forEach(v => out += `<line x1="${X(v)}" x2="${X(v)}" y1="14" y2="${rowY(2) + 22}" stroke="var(--line)"/><text x="${X(v)}" y="${rowY(2) + 42}" text-anchor="middle" font-size="12" fill="var(--muted)">${v}</text>`);
+  out += `<text x="${(L + R) / 2}" y="${rowY(2) + 60}" text-anchor="middle" font-size="12" fill="var(--muted)">trip score</text>`;
+  labels.forEach((lab, i) => {
+    const ts = state.trips.filter(t => t.tags.label === lab && t.tags.source === "UAH-DriveSet");
+    out += `<text x="${L - 12}" y="${rowY(i) + 4}" text-anchor="end" font-size="13" font-weight="600" fill="var(--ink)">${lab}</text>`;
+    ts.forEach((t, j) => {
+      const y = rowY(i) + ((j * 37) % 7 - 3) * 3;
+      out += `<circle cx="${X(t.score).toFixed(1)}" cy="${y}" r="6" fill="${t.tags.seen_in_training ? "var(--panel)" : `var(${cols[lab]})`}" stroke="var(${cols[lab]})" stroke-width="2"><title>${t.title}: ${t.score}</title></circle>`;
+    });
+    if (ts.length) { const m = ts.reduce((a, t) => a + t.score, 0) / ts.length; out += `<line x1="${X(m)}" x2="${X(m)}" y1="${rowY(i) - 16}" y2="${rowY(i) + 16}" stroke="var(--ink)" stroke-width="2"/>` }
+  });
+  svg.setAttribute("viewBox", `0 0 520 ${rowY(2) + 70}`); svg.innerHTML = out;
+  const mean = lab => { const ts = state.trips.filter(t => t.tags.label === lab && t.tags.source === "UAH-DriveSet"); return ts.reduce((a, t) => a + t.score, 0) / (ts.length || 1) };
+  $("#sepstats").innerHTML = labels.map(l => `<dt>Average score, ${l.toLowerCase()} trips</dt><dd>${mean(l).toFixed(1)}</dd>`).join("") + `<dt>Vertical bar</dt><dd>group average</dd>`;
+}
+
+/* ---------- tabs ---------- */
+function show(view) {
+  document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === view));
+  ["replay", "portfolio", "evidence", "analyse"].forEach(v => $(`#view-${v}`).hidden = v !== view);
+  if (view === "replay") requestAnimationFrame(drawMap);
+  try { localStorage.setItem("octa-view", view) } catch (e) {}
+}
+document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => show(b.dataset.view));
+document.querySelectorAll(".seg button").forEach(b => b.onclick = () => { state.variant = b.dataset.v; renderWhatIf() });
+$("#play").onclick = () => state.playing ? pause() : play();
+$("#end").onclick = () => { pause(); seek(tEnd()) };
+$("#scrub").oninput = e => { pause(); const t0 = state.cur.track[0].t; seek(t0 + e.target.value / 1000 * (tEnd() - t0)) };
+window.addEventListener("resize", () => state.cur && drawMap());
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => state.cur && render());
+new MutationObserver(() => state.cur && render()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+/* ---------- analyse (only with the local server) ---------- */
+function addTrip(rep) {
+  rep.id = `upload_${Date.now()}`; state.cache[rep.id] = rep;
+  state.trips.unshift({ id: rep.id, title: rep.title, subtitle: rep.subtitle, score: rep.score, insurer_multiplier: rep.insurer_multiplier,
+    km: rep.trip.distance_km, minutes: rep.trip.duration_min, premium: rep.premium, style: rep.style_probabilities,
+    tags: { source: "upload", driver: "You", label: "Your drive", road: "recorded", replay: true, seen_in_training: false } });
+  renderList(); renderPortfolio(); show("replay"); open(rep.id);
+}
+async function setupAnalyse() {
+  if (DATA) return;
+  try { const r = await fetch("/openapi.json", { method: "GET" }); if (!r.ok) return } catch (e) { return }
+  $("#tab-analyse").hidden = false;
+  const drop = $("#drop"), file = $("#file"), st = $("#up-status");
+  const send = async f => {
+    st.className = "status"; st.textContent = `Analysing ${f.name}… (fetching weather and speed limits)`;
+    const fd = new FormData(); fd.append("file", f);
+    try { const r = await fetch("/api/analyze", { method: "POST", body: fd }); const j = await r.json();
+      if (!r.ok) throw new Error(j.detail || r.statusText); st.textContent = "Done."; addTrip(j);
+    } catch (e) { st.className = "status err"; st.textContent = `Could not analyse this file: ${e.message}` }
+  };
+  file.onchange = () => file.files[0] && send(file.files[0]);
+  ["dragover", "dragenter"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over") }));
+  ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over") }));
+  drop.addEventListener("drop", e => e.dataTransfer.files[0] && send(e.dataTransfer.files[0]));
+
+  // in-browser recorder
+  const rec = { acc: [], gyro: [], gps: [], t0: 0, start: 0, watch: null, tick: null };
+  const onMotion = e => {
+    const t = (performance.now() - rec.t0) / 1000, a = e.accelerationIncludingGravity, r = e.rotationRate;
+    if (a && a.x != null) rec.acc.push([t, a.x, a.y, a.z]);
+    if (r && r.alpha != null) rec.gyro.push([t, r.alpha, r.beta, r.gamma]);
+  };
+  $("#rec").onclick = async () => {
+    const rs = $("#rec-status"); rs.className = "status";
+    try {
+      if (typeof DeviceMotionEvent?.requestPermission === "function" && await DeviceMotionEvent.requestPermission() !== "granted") throw new Error("motion permission denied");
+      if (!navigator.geolocation) throw new Error("no GPS in this browser");
+      Object.assign(rec, { acc: [], gyro: [], gps: [], t0: performance.now(), start: Date.now() });
+      addEventListener("devicemotion", onMotion);
+      rec.watch = navigator.geolocation.watchPosition(p => rec.gps.push([(performance.now() - rec.t0) / 1000, p.coords.latitude, p.coords.longitude, p.coords.speed ?? -1, p.coords.heading ?? -1]),
+        err => { rs.className = "status err"; rs.textContent = `GPS: ${err.message}` }, { enableHighAccuracy: true, maximumAge: 0 });
+      rec.tick = setInterval(() => { $("#rec-t").textContent = fmtT((performance.now() - rec.t0) / 1000); $("#rec-n").textContent = rec.acc.length; $("#rec-g").textContent = rec.gps.length }, 500);
+      try { await navigator.wakeLock?.request("screen") } catch (e) {}
+      $("#rec").disabled = true; $("#recstop").disabled = false; rs.textContent = "Recording. Keep this page open.";
+    } catch (e) { rs.className = "status err"; rs.textContent = `Could not start: ${e.message}. On a phone this page must be opened over HTTPS.` }
+  };
+  $("#recstop").onclick = async () => {
+    removeEventListener("devicemotion", onMotion); navigator.geolocation.clearWatch(rec.watch); clearInterval(rec.tick);
+    $("#rec").disabled = false; $("#recstop").disabled = true;
+    const rs = $("#rec-status"); rs.className = "status"; rs.textContent = "Analysing…";
+    try { const r = await fetch("/api/live", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ start_ms: rec.start, acc: rec.acc, gyro: rec.gyro, gps: rec.gps }) });
+      const j = await r.json(); if (!r.ok) throw new Error(j.detail || r.statusText); rs.textContent = "Done."; addTrip(j);
+    } catch (e) { rs.className = "status err"; rs.textContent = `Could not analyse the recording: ${typeof e.message === "string" ? e.message : "server error"}` }
+  };
+}
+
+/* ---------- boot ---------- */
+(async () => {
+  try {
+    state.trips = await getJSON("data/trips.json");
+    renderList(); renderPortfolio();
+    // open on the lowest-scoring trip of a driver the model never saw: the most telling first view
+    const unseen = state.trips.filter(t => t.tags.replay && !t.tags.seen_in_training && t.tags.source !== "PVS");
+    const first = unseen.sort((a, b) => a.score - b.score)[0] || state.trips.find(t => t.tags.replay);
+    await open(first.id);
+    let v = "replay"; try { v = localStorage.getItem("octa-view") || "replay" } catch (e) {}
+    if (location.hash.length > 1 && ["replay", "portfolio", "evidence"].includes(location.hash.slice(1))) v = location.hash.slice(1);
+    show(v === "analyse" ? "replay" : v);
+  } catch (e) { $("#trip-title").textContent = "Could not load the demo trips"; $("#trip-sub").textContent = String(e.message || e) }
+  setupAnalyse();
+})();
+})();
+</script>

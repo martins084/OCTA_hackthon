@@ -46,6 +46,15 @@ def uah_trip_dirs(root: Path, split: str = "dev") -> list[Path]:
     return sorted(dirs)
 
 
+def pvs_trip_dirs(split: str = "dev") -> list[Path]:
+    """PVS trip folders (data/raw/pvs/PVS_n for dev, data/raw/blind_pvs/PVS_n for blind)."""
+    cfg = SPLITS["pvs"]
+    if split == "blind":
+        _check(True, "PVS blind trips")
+        return [ROOT / cfg["blind_path"] / t for t in cfg["blind_trips"]]
+    return [ROOT / "data/raw/pvs" / t for t in cfg["dev_trips"]]
+
+
 def event_dataset(name: str) -> str:
     """Call before loading an event dataset by name; raises if it is blind."""
     _check(name in SPLITS["events"]["blind_datasets"], f"event dataset '{name}'")
@@ -54,6 +63,8 @@ def event_dataset(name: str) -> str:
 
 def assert_path_allowed(path: Path):
     p = Path(path).resolve()
-    for key in ("uah", "events", "own_recordings"):
-        bp = (ROOT / SPLITS[key]["blind_path"]).resolve()
+    for key, cfg in SPLITS.items():
+        if not isinstance(cfg, dict) or "blind_path" not in cfg:
+            continue
+        bp = (ROOT / cfg["blind_path"]).resolve()
         _check(bp == p or bp in p.parents, str(p))

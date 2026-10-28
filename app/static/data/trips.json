@@ -1,0 +1,1206 @@
+[
+ {
+  "id": "uah_20151126110502-26km-D3-NORMAL-MOTORWAY",
+  "title": "Driver D3: normal drive",
+  "subtitle": "Motorway road, 26km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D3",
+   "label": "Normal",
+   "road": "motorway",
+   "replay": true,
+   "seen_in_training": false
+  },
+  "score": 89.6,
+  "insurer_multiplier": 0.836,
+  "km": 24.4,
+  "minutes": 15.2,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.836,
+   "indicative_premium_eur": 74.42
+  },
+  "style": {
+   "NORMAL": 0.823,
+   "AGGRESSIVE": 0.032,
+   "DROWSY": 0.145
+  }
+ },
+ {
+  "id": "uah_20151126113754-26km-D3-DROWSY-MOTORWAY",
+  "title": "Driver D3: drowsy drive",
+  "subtitle": "Motorway road, 26km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D3",
+   "label": "Drowsy",
+   "road": "motorway",
+   "replay": true,
+   "seen_in_training": false
+  },
+  "score": 74.7,
+  "insurer_multiplier": 1.002,
+  "km": 24.6,
+  "minutes": 16.8,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 1.002,
+   "indicative_premium_eur": 89.26
+  },
+  "style": {
+   "NORMAL": 0.324,
+   "AGGRESSIVE": 0.03,
+   "DROWSY": 0.646
+  }
+ },
+ {
+  "id": "uah_20151126124208-16km-D3-NORMAL1-SECONDARY",
+  "title": "Driver D3: normal drive",
+  "subtitle": "Secondary road, 16km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D3",
+   "label": "Normal",
+   "road": "secondary",
+   "replay": true,
+   "seen_in_training": false
+  },
+  "score": 92.7,
+  "insurer_multiplier": 0.804,
+  "km": 15.1,
+  "minutes": 11.4,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.804,
+   "indicative_premium_eur": 71.63
+  },
+  "style": {
+   "NORMAL": 0.871,
+   "AGGRESSIVE": 0.012,
+   "DROWSY": 0.116
+  }
+ },
+ {
+  "id": "uah_20151126125458-16km-D3-NORMAL2-SECONDARY",
+  "title": "Driver D3: normal drive",
+  "subtitle": "Secondary road, 16km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D3",
+   "label": "Normal",
+   "road": "secondary",
+   "replay": true,
+   "seen_in_training": false
+  },
+  "score": 88.7,
+  "insurer_multiplier": 0.845,
+  "km": 15.3,
+  "minutes": 11.0,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.845,
+   "indicative_premium_eur": 75.25
+  },
+  "style": {
+   "NORMAL": 0.751,
+   "AGGRESSIVE": 0.043,
+   "DROWSY": 0.205
+  }
+ },
+ {
+  "id": "uah_20151126130707-16km-D3-AGGRESSIVE-SECONDARY",
+  "title": "Driver D3: aggressive drive",
+  "subtitle": "Secondary road, 16km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D3",
+   "label": "Aggressive",
+   "road": "secondary",
+   "replay": true,
+   "seen_in_training": false
+  },
+  "score": 76.3,
+  "insurer_multiplier": 0.984,
+  "km": 14.9,
+  "minutes": 11.1,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.984,
+   "indicative_premium_eur": 87.65
+  },
+  "style": {
+   "NORMAL": 0.372,
+   "AGGRESSIVE": 0.238,
+   "DROWSY": 0.39
+  }
+ },
+ {
+  "id": "uah_20151126132013-17km-D3-DROWSY-SECONDARY",
+  "title": "Driver D3: drowsy drive",
+  "subtitle": "Secondary road, 17km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D3",
+   "label": "Drowsy",
+   "road": "secondary",
+   "replay": true,
+   "seen_in_training": false
+  },
+  "score": 87.8,
+  "insurer_multiplier": 0.854,
+  "km": 15.3,
+  "minutes": 10.8,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.854,
+   "indicative_premium_eur": 76.08
+  },
+  "style": {
+   "NORMAL": 0.699,
+   "AGGRESSIVE": 0.029,
+   "DROWSY": 0.272
+  }
+ },
+ {
+  "id": "uah_20151126134736-26km-D3-AGGRESSIVE-MOTORWAY",
+  "title": "Driver D3: aggressive drive",
+  "subtitle": "Motorway road, 26km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D3",
+   "label": "Aggressive",
+   "road": "motorway",
+   "replay": true,
+   "seen_in_training": false
+  },
+  "score": 63.1,
+  "insurer_multiplier": 1.093,
+  "km": 24.1,
+  "minutes": 13.8,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 1.093,
+   "indicative_premium_eur": 97.37
+  },
+  "style": {
+   "NORMAL": 0.217,
+   "AGGRESSIVE": 0.753,
+   "DROWSY": 0.03
+  }
+ },
+ {
+  "id": "uah_20151110175712-16km-D1-NORMAL1-SECONDARY",
+  "title": "Driver D1: normal drive",
+  "subtitle": "Secondary road, 16km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D1",
+   "label": "Normal",
+   "road": "secondary",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 83.6,
+  "insurer_multiplier": 0.9,
+  "km": 15.3,
+  "minutes": 10.4,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.9,
+   "indicative_premium_eur": 80.12
+  },
+  "style": {
+   "NORMAL": 0.858,
+   "AGGRESSIVE": 0.066,
+   "DROWSY": 0.076
+  }
+ },
+ {
+  "id": "uah_20151110180824-16km-D1-NORMAL2-SECONDARY",
+  "title": "Driver D1: normal drive",
+  "subtitle": "Secondary road, 16km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D1",
+   "label": "Normal",
+   "road": "secondary",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 93.1,
+  "insurer_multiplier": 0.8,
+  "km": 14.7,
+  "minutes": 10.4,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.8,
+   "indicative_premium_eur": 71.28
+  },
+  "style": {
+   "NORMAL": 0.865,
+   "AGGRESSIVE": 0.013,
+   "DROWSY": 0.122
+  }
+ },
+ {
+  "id": "uah_20151111123124-25km-D1-NORMAL-MOTORWAY",
+  "title": "Driver D1: normal drive",
+  "subtitle": "Motorway road, 25km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D1",
+   "label": "Normal",
+   "road": "motorway",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 88.9,
+  "insurer_multiplier": 0.843,
+  "km": 24.5,
+  "minutes": 14.4,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.843,
+   "indicative_premium_eur": 75.06
+  },
+  "style": {
+   "NORMAL": 0.898,
+   "AGGRESSIVE": 0.035,
+   "DROWSY": 0.067
+  }
+ },
+ {
+  "id": "uah_20151111125233-24km-D1-AGGRESSIVE-MOTORWAY",
+  "title": "Driver D1: aggressive drive",
+  "subtitle": "Motorway road, 24km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D1",
+   "label": "Aggressive",
+   "road": "motorway",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 46.5,
+  "insurer_multiplier": 1.238,
+  "km": 23.2,
+  "minutes": 12.3,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 1.238,
+   "indicative_premium_eur": 110.28
+  },
+  "style": {
+   "NORMAL": 0.017,
+   "AGGRESSIVE": 0.974,
+   "DROWSY": 0.009
+  }
+ },
+ {
+  "id": "uah_20151111132348-25km-D1-DROWSY-MOTORWAY",
+  "title": "Driver D1: drowsy drive",
+  "subtitle": "Motorway road, 25km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D1",
+   "label": "Drowsy",
+   "road": "motorway",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 65.7,
+  "insurer_multiplier": 1.072,
+  "km": 23.9,
+  "minutes": 15.6,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 1.072,
+   "indicative_premium_eur": 95.49
+  },
+  "style": {
+   "NORMAL": 0.212,
+   "AGGRESSIVE": 0.008,
+   "DROWSY": 0.78
+  }
+ },
+ {
+  "id": "uah_20151111134545-16km-D1-AGGRESSIVE-SECONDARY",
+  "title": "Driver D1: aggressive drive",
+  "subtitle": "Secondary road, 16km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D1",
+   "label": "Aggressive",
+   "road": "secondary",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 22.3,
+  "insurer_multiplier": 1.485,
+  "km": 14.7,
+  "minutes": 8.6,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 1.485,
+   "indicative_premium_eur": 132.23
+  },
+  "style": {
+   "NORMAL": 0.026,
+   "AGGRESSIVE": 0.971,
+   "DROWSY": 0.003
+  }
+ },
+ {
+  "id": "uah_20151111135612-13km-D1-DROWSY-SECONDARY",
+  "title": "Driver D1: drowsy drive",
+  "subtitle": "Secondary road, 13km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D1",
+   "label": "Drowsy",
+   "road": "secondary",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 70.3,
+  "insurer_multiplier": 1.036,
+  "km": 12.0,
+  "minutes": 8.3,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 1.036,
+   "indicative_premium_eur": 92.25
+  },
+  "style": {
+   "NORMAL": 0.283,
+   "AGGRESSIVE": 0.031,
+   "DROWSY": 0.686
+  }
+ },
+ {
+  "id": "uah_20151120131714-26km-D2-NORMAL-MOTORWAY",
+  "title": "Driver D2: normal drive",
+  "subtitle": "Motorway road, 26km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D2",
+   "label": "Normal",
+   "road": "motorway",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 85.3,
+  "insurer_multiplier": 0.881,
+  "km": 24.6,
+  "minutes": 15.5,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.881,
+   "indicative_premium_eur": 78.46
+  },
+  "style": {
+   "NORMAL": 0.851,
+   "AGGRESSIVE": 0.025,
+   "DROWSY": 0.124
+  }
+ },
+ {
+  "id": "uah_20151120133502-26km-D2-AGGRESSIVE-MOTORWAY",
+  "title": "Driver D2: aggressive drive",
+  "subtitle": "Motorway road, 26km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D2",
+   "label": "Aggressive",
+   "road": "motorway",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 57.3,
+  "insurer_multiplier": 1.142,
+  "km": 24.2,
+  "minutes": 14.2,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 1.142,
+   "indicative_premium_eur": 101.7
+  },
+  "style": {
+   "NORMAL": 0.057,
+   "AGGRESSIVE": 0.916,
+   "DROWSY": 0.027
+  }
+ },
+ {
+  "id": "uah_20151120135152-25km-D2-DROWSY-MOTORWAY",
+  "title": "Driver D2: drowsy drive",
+  "subtitle": "Motorway road, 25km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D2",
+   "label": "Drowsy",
+   "road": "motorway",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 65.3,
+  "insurer_multiplier": 1.075,
+  "km": 24.1,
+  "minutes": 15.4,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 1.075,
+   "indicative_premium_eur": 95.78
+  },
+  "style": {
+   "NORMAL": 0.125,
+   "AGGRESSIVE": 0.022,
+   "DROWSY": 0.853
+  }
+ },
+ {
+  "id": "uah_20151120160904-16km-D2-NORMAL1-SECONDARY",
+  "title": "Driver D2: normal drive",
+  "subtitle": "Secondary road, 16km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D2",
+   "label": "Normal",
+   "road": "secondary",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 94.8,
+  "insurer_multiplier": 0.784,
+  "km": 15.1,
+  "minutes": 10.6,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.784,
+   "indicative_premium_eur": 69.81
+  },
+  "style": {
+   "NORMAL": 0.935,
+   "AGGRESSIVE": 0.008,
+   "DROWSY": 0.056
+  }
+ },
+ {
+  "id": "uah_20151120162105-17km-D2-NORMAL2-SECONDARY",
+  "title": "Driver D2: normal drive",
+  "subtitle": "Secondary road, 17km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D2",
+   "label": "Normal",
+   "road": "secondary",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 96.4,
+  "insurer_multiplier": 0.769,
+  "km": 15.5,
+  "minutes": 11.3,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.769,
+   "indicative_premium_eur": 68.45
+  },
+  "style": {
+   "NORMAL": 0.92,
+   "AGGRESSIVE": 0.006,
+   "DROWSY": 0.074
+  }
+ },
+ {
+  "id": "uah_20151120163350-16km-D2-AGGRESSIVE-SECONDARY",
+  "title": "Driver D2: aggressive drive",
+  "subtitle": "Secondary road, 16km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D2",
+   "label": "Aggressive",
+   "road": "secondary",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 52.1,
+  "insurer_multiplier": 1.187,
+  "km": 14.9,
+  "minutes": 10.1,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 1.187,
+   "indicative_premium_eur": 105.75
+  },
+  "style": {
+   "NORMAL": 0.039,
+   "AGGRESSIVE": 0.898,
+   "DROWSY": 0.064
+  }
+ },
+ {
+  "id": "uah_20151120164606-16km-D2-DROWSY-SECONDARY",
+  "title": "Driver D2: drowsy drive",
+  "subtitle": "Secondary road, 16km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D2",
+   "label": "Drowsy",
+   "road": "secondary",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 72.7,
+  "insurer_multiplier": 1.017,
+  "km": 14.8,
+  "minutes": 10.6,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 1.017,
+   "indicative_premium_eur": 90.61
+  },
+  "style": {
+   "NORMAL": 0.17,
+   "AGGRESSIVE": 0.046,
+   "DROWSY": 0.784
+  }
+ },
+ {
+  "id": "uah_20151203171800-16km-D4-NORMAL1-SECONDARY",
+  "title": "Driver D4: normal drive",
+  "subtitle": "Secondary road, 16km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D4",
+   "label": "Normal",
+   "road": "secondary",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 92.8,
+  "insurer_multiplier": 0.803,
+  "km": 15.3,
+  "minutes": 11.9,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.803,
+   "indicative_premium_eur": 71.55
+  },
+  "style": {
+   "NORMAL": 0.844,
+   "AGGRESSIVE": 0.015,
+   "DROWSY": 0.141
+  }
+ },
+ {
+  "id": "uah_20151203173103-17km-D4-NORMAL2-SECONDARY",
+  "title": "Driver D4: normal drive",
+  "subtitle": "Secondary road, 17km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D4",
+   "label": "Normal",
+   "road": "secondary",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 94.4,
+  "insurer_multiplier": 0.788,
+  "km": 15.4,
+  "minutes": 11.3,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.788,
+   "indicative_premium_eur": 70.15
+  },
+  "style": {
+   "NORMAL": 0.911,
+   "AGGRESSIVE": 0.01,
+   "DROWSY": 0.079
+  }
+ },
+ {
+  "id": "uah_20151203174324-16km-D4-AGGRESSIVE-SECONDARY",
+  "title": "Driver D4: aggressive drive",
+  "subtitle": "Secondary road, 16km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D4",
+   "label": "Aggressive",
+   "road": "secondary",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 75.1,
+  "insurer_multiplier": 0.999,
+  "km": 14.4,
+  "minutes": 10.4,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.999,
+   "indicative_premium_eur": 88.95
+  },
+  "style": {
+   "NORMAL": 0.373,
+   "AGGRESSIVE": 0.269,
+   "DROWSY": 0.358
+  }
+ },
+ {
+  "id": "uah_20151203175637-17km-D4-DROWSY-SECONDARY",
+  "title": "Driver D4: drowsy drive",
+  "subtitle": "Secondary road, 17km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D4",
+   "label": "Drowsy",
+   "road": "secondary",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 78.4,
+  "insurer_multiplier": 0.959,
+  "km": 15.3,
+  "minutes": 11.3,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.959,
+   "indicative_premium_eur": 85.41
+  },
+  "style": {
+   "NORMAL": 0.328,
+   "AGGRESSIVE": 0.014,
+   "DROWSY": 0.658
+  }
+ },
+ {
+  "id": "uah_20151204152848-25km-D4-NORMAL-MOTORWAY",
+  "title": "Driver D4: normal drive",
+  "subtitle": "Motorway road, 25km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D4",
+   "label": "Normal",
+   "road": "motorway",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 94.7,
+  "insurer_multiplier": 0.785,
+  "km": 24.3,
+  "minutes": 16.5,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.785,
+   "indicative_premium_eur": 69.89
+  },
+  "style": {
+   "NORMAL": 0.824,
+   "AGGRESSIVE": 0.017,
+   "DROWSY": 0.158
+  }
+ },
+ {
+  "id": "uah_20151204154908-25km-D4-AGGRESSIVE-MOTORWAY",
+  "title": "Driver D4: aggressive drive",
+  "subtitle": "Motorway road, 25km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D4",
+   "label": "Aggressive",
+   "road": "motorway",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 67.3,
+  "insurer_multiplier": 1.059,
+  "km": 24.2,
+  "minutes": 15.5,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 1.059,
+   "indicative_premium_eur": 94.35
+  },
+  "style": {
+   "NORMAL": 0.075,
+   "AGGRESSIVE": 0.822,
+   "DROWSY": 0.103
+  }
+ },
+ {
+  "id": "uah_20151204160823-25km-D4-DROWSY-MOTORWAY",
+  "title": "Driver D4: drowsy drive",
+  "subtitle": "Motorway road, 25km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D4",
+   "label": "Drowsy",
+   "road": "motorway",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 74.9,
+  "insurer_multiplier": 1.001,
+  "km": 24.0,
+  "minutes": 17.1,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 1.001,
+   "indicative_premium_eur": 89.12
+  },
+  "style": {
+   "NORMAL": 0.213,
+   "AGGRESSIVE": 0.003,
+   "DROWSY": 0.784
+  }
+ },
+ {
+  "id": "uah_20151209151242-25km-D5-NORMAL-MOTORWAY",
+  "title": "Driver D5: normal drive",
+  "subtitle": "Motorway road, 25km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D5",
+   "label": "Normal",
+   "road": "motorway",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 89.0,
+  "insurer_multiplier": 0.842,
+  "km": 24.2,
+  "minutes": 15.3,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.842,
+   "indicative_premium_eur": 74.97
+  },
+  "style": {
+   "NORMAL": 0.824,
+   "AGGRESSIVE": 0.017,
+   "DROWSY": 0.159
+  }
+ },
+ {
+  "id": "uah_20151209153137-25km-D5-AGGRESSIVE-MOTORWAY",
+  "title": "Driver D5: aggressive drive",
+  "subtitle": "Motorway road, 25km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D5",
+   "label": "Aggressive",
+   "road": "motorway",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 51.4,
+  "insurer_multiplier": 1.194,
+  "km": 23.8,
+  "minutes": 13.2,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 1.194,
+   "indicative_premium_eur": 106.3
+  },
+  "style": {
+   "NORMAL": 0.014,
+   "AGGRESSIVE": 0.981,
+   "DROWSY": 0.005
+  }
+ },
+ {
+  "id": "uah_20151211160213-25km-D5-DROWSY-MOTORWAY",
+  "title": "Driver D5: drowsy drive",
+  "subtitle": "Motorway road, 25km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D5",
+   "label": "Drowsy",
+   "road": "motorway",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 64.8,
+  "insurer_multiplier": 1.08,
+  "km": 23.9,
+  "minutes": 18.2,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 1.08,
+   "indicative_premium_eur": 96.14
+  },
+  "style": {
+   "NORMAL": 0.046,
+   "AGGRESSIVE": 0.005,
+   "DROWSY": 0.949
+  }
+ },
+ {
+  "id": "uah_20151211162829-16km-D5-NORMAL1-SECONDARY",
+  "title": "Driver D5: normal drive",
+  "subtitle": "Secondary road, 16km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D5",
+   "label": "Normal",
+   "road": "secondary",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 96.5,
+  "insurer_multiplier": 0.768,
+  "km": 14.9,
+  "minutes": 11.4,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.768,
+   "indicative_premium_eur": 68.36
+  },
+  "style": {
+   "NORMAL": 0.906,
+   "AGGRESSIVE": 0.003,
+   "DROWSY": 0.091
+  }
+ },
+ {
+  "id": "uah_20151211164124-17km-D5-NORMAL2-SECONDARY",
+  "title": "Driver D5: normal drive",
+  "subtitle": "Secondary road, 17km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D5",
+   "label": "Normal",
+   "road": "secondary",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 96.5,
+  "insurer_multiplier": 0.768,
+  "km": 15.4,
+  "minutes": 11.4,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.768,
+   "indicative_premium_eur": 68.36
+  },
+  "style": {
+   "NORMAL": 0.927,
+   "AGGRESSIVE": 0.004,
+   "DROWSY": 0.069
+  }
+ },
+ {
+  "id": "uah_20151211165606-12km-D5-AGGRESSIVE-SECONDARY",
+  "title": "Driver D5: aggressive drive",
+  "subtitle": "Secondary road, 12km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D5",
+   "label": "Aggressive",
+   "road": "secondary",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 51.2,
+  "insurer_multiplier": 1.195,
+  "km": 10.3,
+  "minutes": 7.1,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 1.195,
+   "indicative_premium_eur": 106.46
+  },
+  "style": {
+   "NORMAL": 0.23,
+   "AGGRESSIVE": 0.596,
+   "DROWSY": 0.175
+  }
+ },
+ {
+  "id": "uah_20151211170502-16km-D5-DROWSY-SECONDARY",
+  "title": "Driver D5: drowsy drive",
+  "subtitle": "Secondary road, 16km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D5",
+   "label": "Drowsy",
+   "road": "secondary",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 75.4,
+  "insurer_multiplier": 0.995,
+  "km": 15.1,
+  "minutes": 11.6,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.995,
+   "indicative_premium_eur": 88.62
+  },
+  "style": {
+   "NORMAL": 0.236,
+   "AGGRESSIVE": 0.007,
+   "DROWSY": 0.756
+  }
+ },
+ {
+  "id": "uah_20151217162714-26km-D6-NORMAL-MOTORWAY",
+  "title": "Driver D6: normal drive",
+  "subtitle": "Motorway road, 26km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D6",
+   "label": "Normal",
+   "road": "motorway",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 96.9,
+  "insurer_multiplier": 0.764,
+  "km": 24.5,
+  "minutes": 17.0,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.764,
+   "indicative_premium_eur": 68.03
+  },
+  "style": {
+   "NORMAL": 0.901,
+   "AGGRESSIVE": 0.015,
+   "DROWSY": 0.084
+  }
+ },
+ {
+  "id": "uah_20151217164730-25km-D6-DROWSY-MOTORWAY",
+  "title": "Driver D6: drowsy drive",
+  "subtitle": "Motorway road, 25km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D6",
+   "label": "Drowsy",
+   "road": "motorway",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 69.8,
+  "insurer_multiplier": 1.04,
+  "km": 24.0,
+  "minutes": 17.8,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 1.04,
+   "indicative_premium_eur": 92.6
+  },
+  "style": {
+   "NORMAL": 0.074,
+   "AGGRESSIVE": 0.009,
+   "DROWSY": 0.917
+  }
+ },
+ {
+  "id": "uah_20151221112434-17km-D6-NORMAL-SECONDARY",
+  "title": "Driver D6: normal drive",
+  "subtitle": "Secondary road, 17km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D6",
+   "label": "Normal",
+   "road": "secondary",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 96.4,
+  "insurer_multiplier": 0.769,
+  "km": 15.6,
+  "minutes": 13.1,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.769,
+   "indicative_premium_eur": 68.45
+  },
+  "style": {
+   "NORMAL": 0.927,
+   "AGGRESSIVE": 0.005,
+   "DROWSY": 0.068
+  }
+ },
+ {
+  "id": "uah_20151221113846-16km-D6-DROWSY-SECONDARY",
+  "title": "Driver D6: drowsy drive",
+  "subtitle": "Secondary road, 16km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D6",
+   "label": "Drowsy",
+   "road": "secondary",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 72.6,
+  "insurer_multiplier": 1.018,
+  "km": 15.1,
+  "minutes": 12.1,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 1.018,
+   "indicative_premium_eur": 90.68
+  },
+  "style": {
+   "NORMAL": 0.125,
+   "AGGRESSIVE": 0.006,
+   "DROWSY": 0.869
+  }
+ },
+ {
+  "id": "uah_20151221120051-26km-D6-AGGRESSIVE-MOTORWAY",
+  "title": "Driver D6: aggressive drive",
+  "subtitle": "Motorway road, 26km, Madrid (UAH-DriveSet)",
+  "tags": {
+   "source": "UAH-DriveSet",
+   "driver": "D6",
+   "label": "Aggressive",
+   "road": "motorway",
+   "replay": false,
+   "seen_in_training": true
+  },
+  "score": 59.2,
+  "insurer_multiplier": 1.126,
+  "km": 24.4,
+  "minutes": 15.2,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 1.126,
+   "indicative_premium_eur": 100.26
+  },
+  "style": {
+   "NORMAL": 0.098,
+   "AGGRESSIVE": 0.84,
+   "DROWSY": 0.062
+  }
+ },
+ {
+  "id": "pvs_PVS_1",
+  "title": "Vehicle 1: everyday drive",
+  "subtitle": "Asphalt, cobblestone and dirt roads with speed bumps, Brazil (PVS)",
+  "tags": {
+   "source": "PVS",
+   "driver": "PVS-V1",
+   "label": "Normal",
+   "road": "mixed",
+   "replay": true,
+   "seen_in_training": false
+  },
+  "score": 94.8,
+  "insurer_multiplier": 0.784,
+  "km": 13.3,
+  "minutes": 23.7,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.784,
+   "indicative_premium_eur": 69.81
+  },
+  "style": {
+   "NORMAL": 0.863,
+   "AGGRESSIVE": 0.028,
+   "DROWSY": 0.109
+  }
+ },
+ {
+  "id": "pvs_PVS_4",
+  "title": "Vehicle 2: everyday drive",
+  "subtitle": "Asphalt, cobblestone and dirt roads with speed bumps, Brazil (PVS)",
+  "tags": {
+   "source": "PVS",
+   "driver": "PVS-V2",
+   "label": "Normal",
+   "road": "mixed",
+   "replay": true,
+   "seen_in_training": false
+  },
+  "score": 94.1,
+  "insurer_multiplier": 0.791,
+  "km": 13.4,
+  "minutes": 21.9,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.791,
+   "indicative_premium_eur": 70.41
+  },
+  "style": {
+   "NORMAL": 0.839,
+   "AGGRESSIVE": 0.049,
+   "DROWSY": 0.112
+  }
+ },
+ {
+  "id": "pvs_PVS_7",
+  "title": "Vehicle 3: everyday drive",
+  "subtitle": "Asphalt, cobblestone and dirt roads with speed bumps, Brazil (PVS)",
+  "tags": {
+   "source": "PVS",
+   "driver": "PVS-V3",
+   "label": "Normal",
+   "road": "mixed",
+   "replay": true,
+   "seen_in_training": false
+  },
+  "score": 94.4,
+  "insurer_multiplier": 0.788,
+  "km": 13.4,
+  "minutes": 21.3,
+  "premium": {
+   "expected_claims_per_year": 0.0746,
+   "profile_factor": 0.742,
+   "telematics_factor": 0.788,
+   "indicative_premium_eur": 70.15
+  },
+  "style": {
+   "NORMAL": 0.853,
+   "AGGRESSIVE": 0.036,
+   "DROWSY": 0.111
+  }
+ }
+]

@@ -62,6 +62,13 @@ Event rates are also what both the driver and the insurer understand.
   not transfer between sensors). Secondary = `models/event_gbm` (abs+rel features, 0.5 s, trained on BYD + saboor).
   Primary metric: macro event-F1 on Ferreira; also non-aggressive events wrongly flagged.
 
+### Pre-registered before the v2 blind run (2026-10-28)
+- Event blind set is now **PVS 7–9** (whole engine, normal driving). Primary metric: GPS-confirmed harsh events
+  (brake + accel + turn) per hour. **Pass = ≤ 2 per hour and every trip scores ≥ 80.** Secondary: raw IMU events/hour.
+- Event model v2 = alignment-free features + noise/gain augmentation + PVS 1–6 negatives, chosen on
+  leave-one-dataset-out dev results only (scripts/exp_events_lodo.py, src/events.py).
+- Own recordings: same engine; evaluated when collected (docs/RECORDING.md).
+
 ## 4. Metrics
 
 - Events: per-event precision/recall/F1 per type (an event counts as detected if the prediction overlaps the

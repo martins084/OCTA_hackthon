@@ -15,6 +15,7 @@ import pandas as pd
 
 HZ = 20
 G = 9.81
+CHUNK_S = 120       # seconds per alignment chunk
 
 
 def resample(df: pd.DataFrame, hz: int = HZ) -> pd.DataFrame:
@@ -39,10 +40,12 @@ def to_si(df: pd.DataFrame) -> pd.DataFrame:
 
 def _smooth(x: np.ndarray, seconds: float, hz: int = HZ) -> np.ndarray:
     n = max(1, int(seconds * hz))
-    return pd.DataFrame(x).rolling(n, center=True, min_periods=1).mean().to_numpy()
+    return pd.DataFrame(x).rolling(n, center=True, min_periods=1).mean().to_numpy(copy=True)
 
 
-def align(df: pd.DataFrame, hz: int = HZ) -> tuple[pd.DataFrame, dict]:
+def align(df: pd.DataFrame, hz: int = HZ, earth_frame: bool = False) -> tuple[pd.DataFrame, dict]:
+    """earth_frame=True: data already rotated to East/North/Up (e.g. Android 'world' frame), so the
+    car's forward axis turns with its heading; we de-rotate by the integrated yaw before aligning."""
     acc = df[["ax", "ay", "az"]].to_numpy()
     gyr = df[["gx", "gy", "gz"]].to_numpy()
     g_vec = np.median(acc, axis=0)
@@ -60,17 +63,44 @@ def align(df: pd.DataFrame, hz: int = HZ) -> tuple[pd.DataFrame, dict]:
     e1 /= np.linalg.norm(e1)
     e2 = np.cross(up, e1)
     h2 = np.c_[h @ e1, h @ e2]
+    if earth_frame:
+        # heading psi(t) = integral of yaw rate; rotate horizontal accel by -psi into a car-fixed frame.
+        # Subtract the median yaw rate first: a trip's true mean yaw rate is ~0, a gyro bias is not,
+        # and an uncorrected 0.01 rad/s bias would drift the heading by radians over a trip.
+        psi = np.cumsum(omega - np.median(omega)) / hz
+        c, s_ = np.cos(-psi), np.sin(-psi)
+        h2 = np.c_[c * h2[:, 0] - s_ * h2[:, 1], s_ * h2[:, 0] + c * h2[:, 1]]
 
     # left = direction d in the plane maximising corr(h2.d, omega), on 1 s smoothed signals.
     hs, ws = _smooth(h2, 1.0, hz), _smooth(omega[:, None], 1.0, hz)[:, 0]
-    turning = np.abs(ws) > np.quantile(np.abs(ws), 0.5)
-    beta, *_ = np.linalg.lstsq(hs[turning], ws[turning], rcond=None)
-    left2 = beta / (np.linalg.norm(beta) + 1e-12)
-    left = left2[0] * e1 + left2[1] * e2
+
+    def left_dir(idx):
+        turning = idx & (np.abs(ws) > np.quantile(np.abs(ws[idx]), 0.5))
+        beta, *_ = np.linalg.lstsq(hs[turning], ws[turning], rcond=None)
+        return beta / (np.linalg.norm(beta) + 1e-12)
+
+    everywhere = np.ones(len(ws), bool)
+    left_global = left_dir(everywhere)
+    # Chunked re-estimation: handles heading drift (earth frame) and a phone moved mid-trip.
+    # A chunk needs real turning (yaw > 0.1 rad/s for >= 5 s) to trust its own estimate.
+    n = CHUNK_S * hz
+    left2_t = np.tile(left_global, (len(ws), 1))
+    for s in range(0, len(ws), n):
+        idx = np.zeros(len(ws), bool)
+        idx[s:s + n] = True
+        if np.sum(np.abs(ws[idx]) > 0.1) >= 5 * hz:
+            left2_t[idx] = left_dir(idx)
+    left2_t = _smooth(left2_t, 10.0, hz)                       # no jumps at chunk borders
+    left2_t /= np.linalg.norm(left2_t, axis=1, keepdims=True) + 1e-12
+    fwd2_t = np.c_[left2_t[:, 1], -left2_t[:, 0]]              # left x up, in (e1, e2) coordinates
+    left = left_global[0] * e1 + left_global[1] * e2
     fwd = np.cross(left, up)
     out = df.copy()
-    out["lon"], out["lat"], out["vert"], out["yaw_rate"] = h @ fwd, h @ left, lin @ up, omega
-    quality = float(np.corrcoef(hs[turning] @ left2, ws[turning])[0, 1])
+    out["lon"] = np.sum(h2 * fwd2_t, axis=1)
+    out["lat"] = np.sum(h2 * left2_t, axis=1)
+    out["vert"], out["yaw_rate"] = lin @ up, omega
+    t = np.abs(ws) > np.quantile(np.abs(ws), 0.5)
+    quality = float(np.corrcoef(np.sum(hs * left2_t, axis=1)[t], ws[t])[0, 1])
     return out, dict(up=up.round(3).tolist(), forward=fwd.round(3).tolist(), left=left.round(3).tolist(),
                      has_gravity=bool(has_gravity), turn_corr=round(quality, 3))
 

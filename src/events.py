@@ -10,8 +10,8 @@ Usage: python src/events.py [--freeze]
 """
 import argparse
 import glob
-import hashlib
 import json
+import hashlib
 from pathlib import Path
 
 import lightgbm as lgb
@@ -21,7 +21,9 @@ import pandas as pd
 from preprocess import HZ, align, resample, to_si
 from splits import ROOT, event_dataset
 
-EVENTS = ["normal", "brake", "accel", "turn", "lane_change"]
+# brake/accel merged: the IMU model says "harsh speed change"; GPS speed decides brake vs accel.
+EVENTS = ["normal", "speed_change", "turn", "lane_change"]
+MERGE = {"brake": "speed_change", "accel": "speed_change"}
 WIN_S, STEP_S = 3.0, 0.5
 # Low-pass for lon/lat/yaw: manoeuvres are < 1 Hz, phone/road vibration is not. Chosen on dev
 # (docs/RESULTS.md): GBM best at 0.5 s (pooled CV), physics rules best at 1.5 s.
@@ -71,18 +73,65 @@ def load_saboor() -> list[tuple[str, pd.DataFrame]]:
     return out
 
 
-DEV_LOADERS = {"byd": load_byd, "saboor": load_saboor}
+FERREIRA_KIND = [("nao_agressivo", "normal_event"), ("freada", "brake"), ("acelera", "accel"),
+                 ("curva", "turn"), ("troca", "lane_change")]
+
+
+def load_ferreira() -> list[tuple[str, pd.DataFrame]]:
+    """Ferreira (Brazil, phone, Earth-frame, video-labelled). 'normal_event' = gentle manoeuvre that
+    must NOT be flagged; it is treated as label 'normal' for training but kept for scoring."""
+    event_dataset("ferreira")
+    out = []
+    for trip in sorted(p for p in (RAW / "events_ferreira/data").iterdir() if p.is_dir()):
+        t0 = json.loads((trip / "viagem.json").read_text())["firstCollectionUptimeNanos"]
+        acc = pd.read_csv(trip / "acelerometro_terra.csv")
+        gyr = pd.read_csv(trip / "giroscopio_terra.csv")
+        t, tg = (acc.uptimeNanos - t0) / 1e9, (gyr.uptimeNanos - t0) / 1e9
+        d = pd.DataFrame({"t": t, "ax": acc.x, "ay": acc.y, "az": acc.z,
+                          **{f"g{c}": np.interp(t, tg, gyr[c]) for c in "xyz"}})
+        d["label"] = "normal"
+        gt = pd.read_csv(trip / "groundTruth.csv", skipinitialspace=True)
+        for r in gt.itertuples():
+            kind = next(k for key, k in FERREIRA_KIND if key in r.evento)
+            d.loc[(d.t >= r.inicio) & (d.t <= r.fim), "label"] = kind
+        d.attrs["earth_frame"] = True        # *_terra.csv files are in East/North/Up coordinates
+        out.append((f"ferreira/{trip.name}", d))
+    return out
+
+
+def load_pvs(split: str = "dev") -> list[tuple[str, pd.DataFrame]]:
+    """PVS (Brazil): normal driving on asphalt/cobblestone/dirt with speed bumps, dashboard MPU-9250
+    at 100 Hz (gyro in deg/s). No harsh-event labels: everything is 'normal' -> false-alarm test."""
+    from splits import pvs_trip_dirs
+    out = []
+    for trip in pvs_trip_dirs(split):
+        x = pd.read_csv(trip / "dataset_gps_mpu_left.csv",
+                        usecols=["timestamp", "acc_x_dashboard", "acc_y_dashboard", "acc_z_dashboard",
+                                 "gyro_x_dashboard", "gyro_y_dashboard", "gyro_z_dashboard", "speed"])
+        d = pd.DataFrame({"t": x.timestamp - x.timestamp.iloc[0],
+                          "ax": x.acc_x_dashboard, "ay": x.acc_y_dashboard, "az": x.acc_z_dashboard,
+                          **{f"g{c}": np.radians(x[f"gyro_{c}_dashboard"]) for c in "xyz"}})
+        d["label"] = "normal"
+        d.attrs["gyro_si"] = True
+        out.append((f"pvs/{trip.name}", d))
+    return out
+
+
+DEV_LOADERS = {"byd": load_byd, "saboor": load_saboor, "ferreira": load_ferreira}
 
 
 # ---------------------------------------------------------------- features
 
 def prepare(d: pd.DataFrame, smooth_s: float | None = None) -> tuple[pd.DataFrame, dict]:
     lab = d[["t", "label"]] if "label" in d else None
-    r = resample(to_si(d[IMU]))
+    si = to_si(d[IMU])
+    if d.attrs.get("gyro_si"):          # units known: don't let auto-detection rescale the gyro
+        si[["gx", "gy", "gz"]] = d[["gx", "gy", "gz"]].to_numpy()
+    r = resample(si)
     if lab is not None:   # nearest-neighbour label onto the resampled grid
         idx = np.searchsorted(lab.t.to_numpy(), r.t.to_numpy()).clip(0, len(lab) - 1)
         r["label"] = lab.label.to_numpy()[idx]
-    a, info = align(r)
+    a, info = align(r, earth_frame=d.attrs.get("earth_frame", False))
     n = max(1, int((SMOOTH_S if smooth_s is None else smooth_s) * HZ))
     for c in ("lon", "lat", "yaw_rate"):
         a[c] = a[c].rolling(n, center=True, min_periods=1).mean()
@@ -110,8 +159,16 @@ def window_features(a: pd.DataFrame) -> pd.DataFrame:
                  yaw_swing=min(yw.max(), -yw.min()) if yw.max() > 0 > yw.min() else 0.0,
                  vert_std=ve.std(), vert_absmax=np.abs(ve).max(),
                  h_absmax=np.sqrt(lo ** 2 + la ** 2).max())
+        # Alignment-free: |horizontal accel| needs only 'up' (gravity), yaw rate only gyro . up.
+        hm = np.sqrt(lo ** 2 + la ** 2)
+        straight = np.abs(yw) < 0.05
+        r.update(hmag_p90=np.quantile(hm, 0.9), hmag_mean=hm.mean(), hmag_std=hm.std(),
+                 hmag_jerk=np.abs(np.diff(hm)).max() * HZ,
+                 hmag_straight_max=hm[straight].max() if straight.any() else 0.0,
+                 hmag_per_yaw=hm.max() / (np.abs(yw).max() + 0.05),
+                 hmag_dur=np.mean(hm > 0.5 * hm.max()))
         if has_label:
-            lab = a.label.iloc[sl]
+            lab = a.label.iloc[sl].replace("normal_event", "normal")
             ev = lab[lab != "normal"]
             if len(ev) >= 0.3 * n:
                 r["label"] = ev.mode().iloc[0]
@@ -126,13 +183,20 @@ def window_features(a: pd.DataFrame) -> pd.DataFrame:
 ABS_FEATURES = ["lon_min", "lon_max", "lon_mean", "lon_std", "lon_range", "lon_jerk", "lat_absmax",
                 "lat_absmean", "lat_std", "lat_range", "lat_jerk", "lat_swing", "yaw_absmax", "yaw_absmean",
                 "heading_abs", "yaw_swing", "vert_std", "vert_absmax", "h_absmax"]
+FREE_FEATURES = ["h_absmax", "hmag_p90", "hmag_mean", "hmag_std", "hmag_jerk", "hmag_straight_max",
+                 "hmag_per_yaw", "hmag_dur", "yaw_absmax", "yaw_absmean", "heading_abs", "yaw_swing",
+                 "vert_std", "vert_absmax"]
+# v2 model: alignment-free only (aligned features did not transfer to an unseen sensor, see RESULTS.md)
+FEATURES = FREE_FEATURES + [f + "_rel" for f in FREE_FEATURES]
 # Same features divided by the session's typical (median) level: sensor/phone/car independent.
 REL_FEATURES = [f + "_rel" for f in ABS_FEATURES if f != "lon_mean"] + ["lon_mean_z"]
-FEATURES = ABS_FEATURES + REL_FEATURES
 
 
 def add_relative(w: pd.DataFrame) -> pd.DataFrame:
     g = w.groupby("session")
+    for f in FREE_FEATURES:
+        if f not in ABS_FEATURES:
+            w[f + "_rel"] = w[f].abs() / (g[f].transform(lambda x: x.abs().median()) + 1e-6)
     for f in ABS_FEATURES:
         if f == "lon_mean":
             w["lon_mean_z"] = (w.lon_mean - g.lon_mean.transform("median")) / (g.lon_std.transform("median") + 1e-6)
@@ -242,31 +306,63 @@ def evaluate(name: str, w: pd.DataFrame, pred: np.ndarray, truth: pd.DataFrame) 
     return sc.assign(setting=name)
 
 
+def augment(sessions: list, n_copies: int = 2, seed: int = 0) -> list:
+    """Noisy / gain-jittered copies of raw IMU sessions: simulate cheaper, noisier phones.
+    Dev experiment (scripts/exp_events_lodo.py): held-out-dataset F1 0.39 -> 0.47."""
+    rng = np.random.default_rng(seed)
+    out = []
+    for sid, d in sessions:
+        for k in range(n_copies):
+            a = d.copy()
+            noise, gain = rng.uniform(0.0, 1.5), rng.uniform(0.7, 1.3)
+            a[["ax", "ay", "az"]] = a[["ax", "ay", "az"]] * gain + rng.normal(0, noise, (len(a), 3))
+            a[["gx", "gy", "gz"]] = (a[["gx", "gy", "gz"]] * rng.uniform(0.9, 1.1)
+                                     + rng.normal(0, 0.02, (len(a), 3)))
+            a.attrs = dict(d.attrs)
+            out.append((f"{sid}#aug{k}", a))
+    return out
+
+
+def load_all_dev() -> dict:
+    """All dev sessions, brake/accel merged; PVS dev trips as normal-driving negatives."""
+    sessions = {ds: [(sid, d.assign(label=d.label.replace(MERGE))) for sid, d in load()]
+                for ds, load in DEV_LOADERS.items()}
+    sessions["pvs"] = load_pvs("dev")
+    return sessions
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--freeze", action="store_true")
     args = ap.parse_args()
 
-    sessions = {ds: load() for ds, load in DEV_LOADERS.items()}
+    sessions = load_all_dev()
     truth = truth_events([s for ss in sessions.values() for s in ss])
-    w, info = build({ds: (lambda ss=ss: ss) for ds, ss in sessions.items()})
-    print("alignment quality (turn_corr) median by dataset:",
-          {ds: float(np.median([info[s]["turn_corr"] for s, _ in ss])) for ds, ss in sessions.items()})
+    aug = {ds: augment(ss) for ds, ss in sessions.items()}
+    w, _ = build({ds: (lambda ss=ss + aug[ds]: ss) for ds, ss in sessions.items()})
+    w["label"] = w.label.replace(MERGE)
+    is_aug = w.session.str.contains("#aug")
     lab = w.dropna(subset=["label"])
-    print("windows per label:", lab.label.value_counts().to_dict())
+    print("windows per label (orig):", lab[~is_aug.loc[lab.index]].label.value_counts().to_dict())
     print("true events:", truth.label.value_counts().to_dict())
 
-    results = [evaluate("physics rules (no training)", w, physics_rules(w), truth)]
-
-    results.append(evaluate("GBM 5-fold grouped by session", w, grouped_cv(w, lab), truth))
-
-    # Leave-one-dataset-out: train on one country/sensor, test on the other.
-    for test_ds in DEV_LOADERS:
-        tr = lab[lab.dataset != test_ds]
-        te = w.dataset == test_ds
-        results.append(evaluate(f"GBM trained on others -> {test_ds}", w[te], predict(fit(tr), w[te]), truth))
-
+    # Leave-one-dataset-out: every number is on a sensor/country the model never saw.
+    results = []
+    for test_ds in sessions:
+        te = (w.dataset == test_ds) & ~is_aug
+        model = fit(lab[lab.dataset != test_ds])
+        if test_ds == "pvs":   # PVS: one held-out dataset of normal driving -> false alarms per hour
+            pred = predict(model, w[te])
+            P = merge_predictions(w[te], pred)
+            hours = w[te].groupby("session").t1.max().sum() / 3600
+            print(f"\n== held-out PVS (normal driving, rough roads, {hours * 60:.0f} min): "
+                  f"{len(P) / hours:.1f} false events/hour", P.label.value_counts().to_dict())
+            results.append(pd.DataFrame([dict(setting="held-out pvs", event="any", false_per_hour=len(P) / hours)]))
+        else:
+            results.append(evaluate(f"held-out {test_ds}", w[te], predict(model, w[te]), truth))
     out = pd.concat(results)
+    ev = out.dropna(subset=["recall"]) if "recall" in out else out
+    print(f"\nmean event F1 over held-out datasets: {ev.f1.mean():.3f}")
     (ROOT / "data/processed").mkdir(parents=True, exist_ok=True)
     out.to_csv(ROOT / "data/processed/event_dev_results.csv", index=False)
 
@@ -277,7 +373,8 @@ def main():
         sha = hashlib.sha256((MODEL_DIR / "model.txt").read_bytes()).hexdigest()[:12]
         (MODEL_DIR / "meta.json").write_text(json.dumps(dict(
             features=FEATURES, classes=[EVENTS[i] for i in m.classes_], params=PARAMS, model_sha=sha,
-            win_s=WIN_S, step_s=STEP_S, smooth_s=SMOOTH_S, trained_on=list(DEV_LOADERS)), indent=2))
+            win_s=WIN_S, step_s=STEP_S, smooth_s=SMOOTH_S, trained_on=list(sessions), augmented=True,
+            dev_lodo_mean_f1=float(ev.f1.mean())), indent=2))
         print(f"\nfrozen -> {MODEL_DIR} (sha {sha})")
 
 

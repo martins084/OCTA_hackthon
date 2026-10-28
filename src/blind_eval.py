@@ -14,8 +14,6 @@ from pathlib import Path
 import lightgbm as lgb
 import numpy as np
 
-import pandas as pd
-
 import events as ev
 from splits import ROOT, SPLITS, blind_access, uah_trip_dirs
 from train_driving import CLASSES, MODEL_DIR, build_dataset, metrics, trip_table
@@ -39,67 +37,45 @@ def eval_style() -> tuple[dict, str]:
     return m, f"style_gbm {sha} (commit {meta['git_commit']}{', dirty' if meta['dirty'] else ''})"
 
 
-FERREIRA_KIND = [("nao_agressivo", "normal"), ("freada", "brake"), ("acelera", "accel"),
-                 ("curva", "turn"), ("troca", "lane_change")]
-
-
-def load_ferreira() -> tuple[list, pd.DataFrame]:
-    """Ferreira trips -> (sessions without labels, ground-truth events incl. non-aggressive ones)."""
-    root = ROOT / SPLITS["events"]["blind_path"] / "data"
-    sessions, truth = [], []
-    for trip in sorted(p for p in root.iterdir() if p.is_dir()):
-        t0 = json.loads((trip / "viagem.json").read_text())["firstCollectionUptimeNanos"]
-        acc = pd.read_csv(trip / "acelerometro_terra.csv")
-        gyr = pd.read_csv(trip / "giroscopio_terra.csv")
-        t = (acc.uptimeNanos - t0) / 1e9
-        tg = (gyr.uptimeNanos - t0) / 1e9
-        d = pd.DataFrame({"t": t, "ax": acc.x, "ay": acc.y, "az": acc.z,
-                          **{f"g{c}": np.interp(t, tg, gyr[c]) for c in "xyz"}})
-        sid = f"ferreira/{trip.name}"
-        sessions.append((sid, d))
-        gt = pd.read_csv(trip / "groundTruth.csv", skipinitialspace=True)
-        for r in gt.itertuples():
-            kind = next(k for key, k in FERREIRA_KIND if key in r.evento)
-            truth.append(dict(session=sid, label=kind, t0=r.inicio, t1=r.fim))
-    return sessions, pd.DataFrame(truth)
-
-
-def eval_events() -> tuple[dict, str]:
+def eval_pvs() -> tuple[dict, str]:
+    """Whole engine on PVS 7-9 (vehicle/driver 3, normal driving incl. cobblestone, dirt, speed bumps).
+    Pre-registered (docs/PLAN.md): primary = GPS-confirmed harsh events per hour; pass if <= 2/h and
+    every trip scores >= 80."""
+    from engine import analyze_trip, load_pvs
+    from splits import pvs_trip_dirs
     meta = json.loads((ev.MODEL_DIR / "meta.json").read_text())
-    sha = hashlib.sha256((ev.MODEL_DIR / "model.txt").read_bytes()).hexdigest()[:12]
-    if sha != meta["model_sha"]:
-        raise RuntimeError("event model.txt does not match meta.json; refreeze")
-    booster = lgb.Booster(model_file=str(ev.MODEL_DIR / "model.txt"))
+    rows = []
     with blind_access():
-        sessions, truth = load_ferreira()
-    w, _ = ev.build({"ferreira": lambda: sessions}, meta["smooth_s"])
-    wr, _ = ev.build({"ferreira": lambda: sessions}, ev.RULES_SMOOTH_S)
-    p = booster.predict(w[meta["features"]])
-    gbm = np.array(meta["classes"], dtype=object)[np.asarray(p).argmax(1)]
-    hours = w.groupby("session").t1.max().sum() / 3600
-    out, normal = {}, truth[truth.label == "normal"]
-    # Pre-registered (docs/PLAN.md): rules = primary, gbm = secondary.
-    for name, ww, pred in [("rules (primary)", wr, ev.physics_rules(wr)), ("gbm (secondary)", w, gbm)]:
-        P = ev.merge_predictions(ww, pred)
-        sc = ev.event_scores(truth[truth.label != "normal"], P, hours)
-        print(f"\n== blind Ferreira, {name}")
-        print(sc.round(3).to_string(index=False))
-        flagged = sum(any((P.session == r.session) & (P.t0 <= r.t1) & (P.t1 >= r.t0)) for r in normal.itertuples())
-        out[name] = dict(macro_f1=float(sc.f1.mean()), **{f"f1_{r.event}": float(r.f1) for r in sc.itertuples()},
-                         non_aggressive_flagged=f"{flagged}/{len(normal)}")
-    return out, f"event_gbm {sha} + physics rules"
+        trips = pvs_trip_dirs("blind")
+    for trip in trips:
+        rep = analyze_trip(*load_pvs(trip))
+        hours = rep["trip"]["duration_min"] / 60
+        confirmed = sum(n for k, n in rep["imu_event_counts"].items() if k in ("harsh_brake", "harsh_accel", "turn"))
+        rows.append(dict(trip=trip.name, score=rep["score"], hours=round(hours, 2),
+                         confirmed_harsh_per_hour=round(confirmed / hours, 2),
+                         raw_imu_events_per_hour=round(len(rep["imu_events"]) / hours, 1),
+                         rejected_by_gps=rep["imu_events_rejected_by_gps"], counts=rep["imu_event_counts"],
+                         speed_limit_coverage=rep["trip"]["speed_limit_coverage"]))
+        print(rows[-1])
+    total_h = sum(r["hours"] for r in rows)
+    per_h = sum(r["confirmed_harsh_per_hour"] * r["hours"] for r in rows) / total_h
+    out = dict(confirmed_harsh_per_hour=round(per_h, 2), min_score=min(r["score"] for r in rows),
+               scores=[r["score"] for r in rows],
+               raw_imu_per_hour=round(sum(r["raw_imu_events_per_hour"] * r["hours"] for r in rows) / total_h, 1),
+               passed=bool(per_h <= 2 and min(r["score"] for r in rows) >= 80))
+    return out, f"engine v2: event_gbm {meta['model_sha']} + style_gbm + GPS confirmation"
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("target", choices=["style", "events"])
+    ap.add_argument("target", choices=["style", "pvs"])
     ap.add_argument("--confirm", action="store_true", help="required: this reads blind data")
     ap.add_argument("--note", required=True)
     args = ap.parse_args()
     if not args.confirm:
         raise SystemExit("Refusing to touch blind data without --confirm (see docs/PLAN.md section 3).")
 
-    m, model = {"style": eval_style, "events": eval_events}[args.target]()
+    m, model = {"style": eval_style, "pvs": eval_pvs}[args.target]()
     print(json.dumps(m, indent=2))
     if not LOG.exists():
         LOG.write_text("# Blind evaluation log\n\nEvery read of blind data, appended by src/blind_eval.py.\n\n"

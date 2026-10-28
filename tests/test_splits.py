@@ -17,8 +17,9 @@ def test_dev_trips_exclude_blind_driver():
 
 @pytest.mark.parametrize("call", [
     lambda: splits.uah_trip_dirs(ROOT / "data/raw/uah", "blind"),
-    lambda: splits.event_dataset("ferreira"),
-    lambda: splits.assert_path_allowed(ROOT / "data/raw/blind_ferreira/data"),
+    lambda: splits.pvs_trip_dirs("blind"),
+    lambda: splits.assert_path_allowed(ROOT / "data/raw/blind_pvs/PVS_7"),
+    lambda: splits.assert_path_allowed(ROOT / "data/raw/blind_uah/D3"),
     lambda: splits.assert_path_allowed(ROOT / "data/raw/blind_own/x"),
 ])
 def test_blind_access_blocked(call):
@@ -28,6 +29,11 @@ def test_blind_access_blocked(call):
 
 def test_gate_closes_after_use():
     with splits.blind_access():
-        splits.event_dataset("ferreira")
+        splits.pvs_trip_dirs("blind")
     with pytest.raises(splits.BlindDataError):
-        splits.event_dataset("ferreira")
+        splits.pvs_trip_dirs("blind")
+
+
+def test_dev_pvs_excludes_blind():
+    names = {p.name for p in splits.pvs_trip_dirs("dev")}
+    assert names.isdisjoint(splits.SPLITS["pvs"]["blind_trips"])

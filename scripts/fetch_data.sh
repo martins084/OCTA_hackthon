@@ -27,11 +27,23 @@ done
 # --- Event datasets (harsh brake / accel / turn / lane change) ---
 kg dinupadevinda/byd-atto-bmi160-imu-driving-events      events_byd
 kg saboorahmad47/harsh-driving-dataset                   events_saboor
-# BLIND event test set: never use for training or tuning (see docs/PLAN.md section 3)
-if [[ ! -d "$RAW/blind_ferreira" ]]; then
-  git clone -q --depth 1 https://github.com/jair-jr/driverBehaviorDataset "$RAW/blind_ferreira"
-  rm -rf "$RAW/blind_ferreira/.git"
+# Ferreira (Brazil): dev since 2026-10-28, see data_splits.json changes
+if [[ ! -d "$RAW/events_ferreira" ]]; then
+  git clone -q --depth 1 https://github.com/jair-jr/driverBehaviorDataset "$RAW/events_ferreira"
+  rm -rf "$RAW/events_ferreira/.git"
 fi
+
+# PVS (Brazil, normal driving, road surface + speed bump labels). PVS 7-9 are BLIND (data_splits.json).
+for i in 1 2 3 4 5 6 7 8 9; do
+  if (( i <= 6 )); then D="$RAW/pvs/PVS_$i"; else D="$RAW/blind_pvs/PVS_$i"; fi
+  [[ -f "$D/dataset_gps_mpu_left.csv" ]] && continue
+  mkdir -p "$D"
+  for f in dataset_gps_mpu_left.csv dataset_labels.csv dataset_settings_left.csv; do
+    kaggle datasets download jefmenegazzo/pvs-passive-vehicular-sensors-datasets -f "PVS $i/$f" -p "$D" -q
+  done
+  [[ -d "$D/PVS $i" ]] && mv "$D/PVS $i"/* "$D"/ && rmdir "$D/PVS $i"
+  (cd "$D" && for z in *.zip; do [[ -f "$z" ]] && unzip -oq "$z" && rm "$z"; done)
+done
 
 if [[ "${1:-}" == "--big" ]]; then
   kg tsiaras/uk-road-safety-accidents-and-vehicles       uk_stats19

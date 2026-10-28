@@ -24,6 +24,8 @@ EVENT_POINTS = {"harsh_brake": 4.0, "harsh_accel": 2.0, "harsh_turn": 3.0}   # p
 SPEEDING_POINTS = {"frac_over_limit_10": 25.0, "frac_over_limit_20": 40.0}  # x share of driving time
 STYLE_POINTS = 30.0                                                          # x P(risky)
 MAX_EVENT_PENALTY = 40.0
+# Credibility smoothing: rate = n / (km + PRIOR_KM) * 100, so one event on a short trip isn't "10 per 100 km".
+PRIOR_KM = 25.0
 
 
 @dataclass
@@ -83,7 +85,7 @@ def score_trip(windows: pd.DataFrame, p_risky: float, ctx: Context | None = None
     ev_total = 0.0
     for col, pts in EVENT_POINTS.items():
         n = windows[col].sum() / overlap
-        per100 = n / km * 100
+        per100 = n / (km + PRIOR_KM) * 100
         p = pts * per100 * cm
         ev_total += p
         if n >= 1:
