@@ -81,6 +81,38 @@ Kalman-filtered, gravity-removed and has no gyroscope. Raw phone data does trans
 **Decision:** the headline score stays the expert score (its ordering is validated on UAH); the learned Grab risk is shown
 alongside it for raw-phone recordings; blending waits for our own Latvian recordings.
 
+### Self-supervised Transformer (dev, written before its blind run)
+
+Patch Transformer over 1 Hz trip sequences (6 orientation-invariant channels + presence mask, first 30 min).
+It is pre-trained by masked-patch reconstruction (40% of patches masked, no labels), then fine-tuned on the danger
+label. In every fold, pre-training saw only that fold's training trips. Zero padding reveals trip length, so it is
+compared with the *full* GBM. Two configurations ran in parallel: Kaggle GPU and the laptop RTX 5060.
+
+| 5-fold dev, 15,953 trips | Kaggle (10 s patches, d=96) | Laptop (5 s patches, d=128) |
+|---|---|---|
+| Transformer from scratch | 0.722 | 0.718 |
+| Transformer, pre-trained | 0.731 | **0.735** |
+| Pre-training gain (paired 95% CI) | +0.009 [+0.003, +0.016] | **+0.017 [+0.009, +0.024]** |
+| 50/50 ensemble with full GBM (0.733) | 0.745 | **0.746** |
+| Ensemble gain vs GBM (paired 95% CI) | +0.012 [+0.009, +0.016] | **+0.013 [+0.010, +0.017]** |
+
+Both pre-registered dev conditions hold. Chosen on dev: the laptop configuration, ensemble weight 0.5. The final model is
+pre-trained and fine-tuned on all dev trips (3 seeds averaged) and then gets one blind run.
+
+**Blind (sealed 4,027 Grab trips, pre-registered: paired gain of ensemble over full GBM, CI must be > 0): PASSED.**
+
+| Blind AUC | |
+|---|---|
+| Full GBM | 0.747 |
+| Transformer alone | 0.771 |
+| **GBM + Transformer ensemble (pre-registered)** | **0.769** |
+| Gain over GBM, paired 95% CI | **+0.022 [+0.015, +0.027]** |
+
+The Transformer alone scored marginally higher on blind. The ensemble remains the reported model, because switching after
+seeing blind numbers would defeat the protocol. Blind exceeds dev (0.746), plausibly because the final model trains
+on all dev trips and averages 3 seeds. As with the full GBM, this model can use trip length (exposure) through padding.
+A behaviour-only Transformer (fixed-length random crops) is the next step for the driver-facing score.
+
 **Personal baseline (`src/personal_baseline.py`, no labels).** Each trip is compared with the same driver's other normal
 trips (leave-one-out) on road-type-robust features. On UAH dev drivers: risky-vs-normal AUC 0.88, aggressive 0.96,
 drowsy 0.81 (population model: 0.92). It comes with explanations such as "time over the limit higher than your usual (12.1 sd)".

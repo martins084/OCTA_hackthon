@@ -100,16 +100,62 @@ def _eval_grab_model(mdir) -> tuple[dict, str]:
     return out, f"trip_risk {meta['model']} {sha}"
 
 
+def eval_grab_ssl() -> tuple[dict, str]:
+    """Pre-registered (docs/PLAN.md): primary = paired AUC gain of the GBM+Transformer ensemble over the full GBM
+    on the sealed Grab trips; success only if the 95% CI of the gain is entirely above zero."""
+    import pandas as pd
+    import torch
+    from sklearn.metrics import roc_auc_score
+    from ssl_model import Classifier, Encoder, predict
+    sdir = ROOT / "models/trip_ssl"
+    meta = json.loads((sdir / "meta.json").read_text())
+    sha = hashlib.sha256(b"".join((sdir / f).read_bytes() for f in meta["files"])).hexdigest()[:12]
+    if sha != meta["model_sha"]:
+        raise RuntimeError("trip_ssl weights do not match meta.json")
+    cfg = meta["config"]
+    models = []
+    for f in meta["files"]:
+        m = Classifier(Encoder(meta["channels"], meta["n_patch"], cfg["patch"], cfg["d"], 4, cfg["layers"]),
+                       meta["channels"], cfg["d"])
+        m.load_state_dict(torch.load(sdir / f, map_location="cpu"))
+        models.append(m)
+    gdir = ROOT / "models/trip_risk_full"
+    gmeta = json.loads((gdir / "meta.json").read_text())
+    booster = lgb.Booster(model_file=str(gdir / "model.txt"))
+    bp = ROOT / SPLITS["grab"]["blind_path"]
+    with blind_access():
+        feats = pd.read_parquet(bp / "grab_blind_features.parquet")
+        z = np.load(bp / "grab_blind_seq.npz")
+    seq = pd.DataFrame({"bookingID": z["bookingID"], "i": np.arange(len(z["bookingID"]))})
+    df = feats.merge(seq, on="bookingID")
+    p_ssl = predict(models, z["X"][df.i.to_numpy()].astype(np.float32), np.array(meta["mu"]), np.array(meta["sd"]),
+                    cfg["patch"])
+    p_gbm = booster.predict(df[gmeta["features"]])
+    w = meta["ensemble_weight"]
+    rank = lambda a: pd.Series(a).rank(pct=True).to_numpy()
+    ens = (1 - w) * rank(p_gbm) + w * rank(p_ssl)
+    y = df.label.to_numpy()
+    rng = np.random.default_rng(0)
+    gains = [roc_auc_score(y[i], ens[i]) - roc_auc_score(y[i], p_gbm[i])
+             for i in (rng.integers(0, len(y), len(y)) for _ in range(1000))]
+    lo, hi = float(np.quantile(gains, .025)), float(np.quantile(gains, .975))
+    out = dict(auc_gbm_full=float(roc_auc_score(y, p_gbm)), auc_ssl=float(roc_auc_score(y, p_ssl)),
+               auc_ensemble=float(roc_auc_score(y, ens)), gain=float(np.mean(gains)), gain_ci95=[lo, hi],
+               ensemble_weight=w, n=len(y), passed=bool(lo > 0))
+    return out, f"trip_ssl {sha} + trip_risk_full {gmeta['model_sha']}"
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("target", choices=["style", "pvs", "grab"])
+    ap.add_argument("target", choices=["style", "pvs", "grab", "grab_ssl"])
     ap.add_argument("--confirm", action="store_true", help="required: this reads blind data")
     ap.add_argument("--note", required=True)
     args = ap.parse_args()
     if not args.confirm:
         raise SystemExit("Refusing to touch blind data without --confirm (see docs/PLAN.md section 3).")
 
-    m, model = {"style": eval_style, "pvs": eval_pvs, "grab": eval_grab}[args.target]()
+    m, model = {"style": eval_style, "pvs": eval_pvs, "grab": eval_grab,
+                    "grab_ssl": eval_grab_ssl}[args.target]()
     print(json.dumps(m, indent=2))
     if not LOG.exists():
         LOG.write_text("# Blind evaluation log\n\nEvery read of blind data, appended by src/blind_eval.py.\n\n"

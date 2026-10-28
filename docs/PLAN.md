@@ -76,6 +76,13 @@ Event rates are also what both the driver and the insurer understand.
   Blind set: sealed 20% of Grab trips (4,027). **Primary: ROC-AUC. Pass = blind AUC ≥ lower bound of dev-CV 95% CI.**
 - Self-supervised Transformer: compared on dev CV only; enters the blind run only if it improves the GBM ensemble on dev.
 
+### Pre-registered before any Transformer blind run (2026-10-28)
+- Self-supervised patch Transformer (`models/trip_ssl`) enters the blind run only if, on dev out-of-fold predictions,
+  pre-training beats scratch and the GBM-full + Transformer ensemble beats GBM-full with a paired-bootstrap CI above 0.
+  The ensemble weight is fixed on dev. It is compared with the *full* GBM, because zero padding reveals trip length.
+- **Blind primary: paired AUC gain of the ensemble over GBM-full on the sealed 4,027 Grab trips. Success only if the
+  95% CI of the gain is entirely above zero.**
+
 ## 4. Metrics
 
 - Events: per-event precision/recall/F1 per type (an event counts as detected if the prediction overlaps the

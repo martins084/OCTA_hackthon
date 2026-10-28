@@ -18,6 +18,9 @@ decisions about individuals without human review, and not validated for claims h
 | GPS confirmation | rule: harsh speed change ≥ 8 km/h; turn ≥ 30° heading | none | PVS dev / blind false events per hour |
 | Context multipliers | exposure-based relative risk + daily quasi-Poisson | CAIS Latvia 2013–2023, Open-Meteo | CIs; holiday sanity check |
 | Trip score | expert-weighted penalties | none (weights are assumptions) | within-driver ordering on dev drivers |
+| Trip danger risk (behaviour-only) | LightGBM on 41 trip features | Grab safety labels, 15,953 trips | 5-fold CV; **blind 20% (AUC 0.696)** |
+| Trip danger risk (full, with exposure) | LightGBM + self-supervised patch Transformer ensemble | Grab, same | **blind AUC 0.769** (GBM alone 0.747) |
+| Personal baseline | per-driver z-scores vs own normal trips | none (unsupervised) | UAH dev: AUC 0.88 |
 | Insurer frequency | Poisson LightGBM | freMTPL2 (France) | 20% policy holdout: deviance, Gini |
 
 ## Results
