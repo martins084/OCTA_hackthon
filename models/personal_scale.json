@@ -1,0 +1,14 @@
+{
+ "speed_ratio_mean": 0.069392,
+ "speed_ratio_p95": 0.132188,
+ "frac_over_limit_10": 0.065257,
+ "lon_p05": 0.006208,
+ "lon_p95": 0.008468,
+ "lon_jerk_std": 0.001928,
+ "lat_abs_p95": 0.00487,
+ "lat_x_speed": 0.757846,
+ "mag_std": 0.001946,
+ "jerk_p95": 0.012991,
+ "band_high_frac": 0.016832,
+ "band_low_frac": 0.042232
+}

@@ -31,6 +31,9 @@ CACHE = ROOT / "data/cache"
 G = 9.81
 # GPS confirmation of IMU events: a real 0.25 g brake over 2 s changes speed by ~18 km/h.
 MIN_DV_KMH = 8.0
+# Personal baseline: anomaly (RMS of top-3 z) above this = "unusual for you". UAH dev: normal median 2.35,
+# drowsy 3.45, aggressive 7.16; 4.0 sits between normal and aggressive.
+UNUSUAL_THRESHOLD = 4.0
 MIN_TURN_DEG = 30.0
 
 OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter",
@@ -252,8 +255,25 @@ def learned_risk(gps: pd.DataFrame, imu: pd.DataFrame) -> dict | None:
                 safer_than_pct=round(100 - min(pct, 100), 1), model_sha=meta["model_sha"])
 
 
+def personal_check(windows: pd.DataFrame, history: list[dict]) -> dict | None:
+    """Compare this trip with the driver's own earlier normal trips (src/personal_baseline.py).
+    history: trip summaries previously returned as report['personal_features']."""
+    from personal_baseline import FEATS, POP_SCALE, explain_z
+    if not history:
+        return None
+    cur = windows[FEATS].mean()
+    base = pd.DataFrame(history)[FEATS]
+    z = (cur - base.mean()) / pd.Series(POP_SCALE)
+    score = float(np.sqrt(np.mean(np.sort(np.abs(z.to_numpy()))[-3:] ** 2)))
+    return dict(anomaly=round(score, 2), unusual=bool(score > UNUSUAL_THRESHOLD), n_history=len(history),
+                reasons=explain_z(z) if score > UNUSUAL_THRESHOLD else [])
+
+
 def analyze_trip(gps: pd.DataFrame, imu: pd.DataFrame, start: pd.Timestamp,
-                 driver: dict | None = None, use_osm: bool = True, detail: bool = False) -> dict:
+                 driver: dict | None = None, use_osm: bool = True, detail: bool = False,
+                 history: list[dict] | None = None) -> dict:
+    """history: this driver's earlier normal-trip summaries (report['personal_features']) for the
+    personal baseline; omit for a first trip."""
     """detail=True adds what a replay UI needs: GPS track, score timeline, what-if context variants."""
     gps = gps.sort_values("t").reset_index(drop=True)
     if "course" not in gps or gps.course.isna().all():
@@ -289,6 +309,8 @@ def analyze_trip(gps: pd.DataFrame, imu: pd.DataFrame, start: pd.Timestamp,
         imu_events=imu_events.to_dict("records"),
         imu_event_counts=(imu_events[imu_events.gps_confirmed.fillna(True).astype(bool)].type.value_counts().to_dict()
                           if len(imu_events) else {}),
+        personal=personal_check(windows, history or []),
+        personal_features=windows[__import__("personal_baseline").FEATS].mean().round(5).to_dict(),
         imu_events_rejected_by_gps=int((imu_events.gps_confirmed == False).sum()) if len(imu_events) else 0,  # noqa: E712
     )
     if driver:
