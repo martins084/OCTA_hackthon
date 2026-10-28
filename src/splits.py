@@ -1,0 +1,86 @@
+"""Dev/blind split guard. Every loader goes through here; see docs/PLAN.md section 3.
+
+Blind data is only reachable inside `blind_access()`, which src/blind_eval.py opens after
+--confirm. Anything else that touches a blind driver, dataset or path raises BlindDataError.
+"""
+import json
+from contextlib import contextmanager
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SPLITS = json.loads((ROOT / "data_splits.json").read_text())
+_BLIND_OPEN = False
+
+
+class BlindDataError(RuntimeError):
+    pass
+
+
+@contextmanager
+def blind_access():
+    global _BLIND_OPEN
+    _BLIND_OPEN = True
+    try:
+        yield
+    finally:
+        _BLIND_OPEN = False
+
+
+def _check(is_blind: bool, what: str):
+    if is_blind and not _BLIND_OPEN:
+        raise BlindDataError(f"{what} is blind test data; only src/blind_eval.py may read it")
+
+
+def uah_trip_dirs(root: Path, split: str = "dev") -> list[Path]:
+    """UAH trip folders for 'dev' or 'blind'. Filters by driver id, so it is safe even when the
+    blind driver sits in the same folder (as on Kaggle, where uah/ still contains D3)."""
+    blind = set(SPLITS["uah"]["blind_drivers"])
+    if split == "blind":
+        _check(True, "UAH blind drivers")
+        roots = [root, ROOT / SPLITS["uah"]["blind_path"]]
+        want = blind
+    else:
+        roots = [root]
+        want = set(SPLITS["uah"]["dev_drivers"])
+    dirs = {d.resolve() for r in roots for d in r.glob("D*/*/") if d.parent.name in want}
+    return sorted(dirs)
+
+
+def pvs_trip_dirs(split: str = "dev") -> list[Path]:
+    """PVS trip folders (data/raw/pvs/PVS_n for dev, data/raw/blind_pvs/PVS_n for blind)."""
+    cfg = SPLITS["pvs"]
+    if split == "blind":
+        _check(True, "PVS blind trips")
+        return [ROOT / cfg["blind_path"] / t for t in cfg["blind_trips"]]
+    return [ROOT / "data/raw/pvs" / t for t in cfg["dev_trips"]]
+
+
+def grab_is_blind(booking_ids):
+    """Boolean mask: True for Grab bookings in the sealed blind 20% (hash rule in data_splits.json)."""
+    import hashlib
+    import numpy as np
+    return np.array([int(hashlib.sha256(str(int(b)).encode()).hexdigest(), 16) % 10 < 2 for b in booking_ids])
+
+
+def grab_split(df, id_col: str = "bookingID", split: str = "dev"):
+    """Rows of a Grab frame for 'dev' or 'blind' (blind only inside blind_access())."""
+    blind = grab_is_blind(df[id_col].to_numpy())
+    if split == "blind":
+        _check(True, "Grab blind bookings")
+        return df[blind]
+    return df[~blind]
+
+
+def event_dataset(name: str) -> str:
+    """Call before loading an event dataset by name; raises if it is blind."""
+    _check(name in SPLITS["events"]["blind_datasets"], f"event dataset '{name}'")
+    return name
+
+
+def assert_path_allowed(path: Path):
+    p = Path(path).resolve()
+    for key, cfg in SPLITS.items():
+        if not isinstance(cfg, dict) or "blind_path" not in cfg:
+            continue
+        bp = (ROOT / cfg["blind_path"]).resolve()
+        _check(bp == p or bp in p.parents, str(p))

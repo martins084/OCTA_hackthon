@@ -1,0 +1,62 @@
+{
+  "features": [
+    "h_absmax",
+    "hmag_p90",
+    "hmag_mean",
+    "hmag_std",
+    "hmag_jerk",
+    "hmag_straight_max",
+    "hmag_per_yaw",
+    "hmag_dur",
+    "yaw_absmax",
+    "yaw_absmean",
+    "heading_abs",
+    "yaw_swing",
+    "vert_std",
+    "vert_absmax",
+    "h_absmax_rel",
+    "hmag_p90_rel",
+    "hmag_mean_rel",
+    "hmag_std_rel",
+    "hmag_jerk_rel",
+    "hmag_straight_max_rel",
+    "hmag_per_yaw_rel",
+    "hmag_dur_rel",
+    "yaw_absmax_rel",
+    "yaw_absmean_rel",
+    "heading_abs_rel",
+    "yaw_swing_rel",
+    "vert_std_rel",
+    "vert_absmax_rel"
+  ],
+  "classes": [
+    "normal",
+    "speed_change",
+    "turn",
+    "lane_change"
+  ],
+  "params": {
+    "n_estimators": 400,
+    "learning_rate": 0.03,
+    "num_leaves": 15,
+    "min_child_samples": 10,
+    "subsample": 0.8,
+    "subsample_freq": 1,
+    "colsample_bytree": 0.8,
+    "reg_lambda": 1.0,
+    "class_weight": "balanced",
+    "verbose": -1
+  },
+  "model_sha": "a262715b4a19",
+  "win_s": 3.0,
+  "step_s": 0.5,
+  "smooth_s": 0.5,
+  "trained_on": [
+    "byd",
+    "saboor",
+    "ferreira",
+    "pvs"
+  ],
+  "augmented": true,
+  "dev_lodo_mean_f1": 0.400494112359403
+}

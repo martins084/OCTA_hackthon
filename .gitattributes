@@ -2,3 +2,6 @@
 *.bat text eol=crlf
 *.cmd text eol=crlf
 *.ps1 text eol=crlf
+
+# Frozen model artefacts are hashed byte-for-byte (src/blind_eval.py): never touch line endings
+models/** binary

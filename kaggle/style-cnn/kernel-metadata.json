@@ -1,0 +1,13 @@
+{
+  "id": "martinsvarna/octa-style-cnn",
+  "title": "OCTA style CNN",
+  "code_file": "train_cnn.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": false,
+  "dataset_sources": ["martinsvarna/octa-driving-data"],
+  "competition_sources": [],
+  "kernel_sources": []
+}

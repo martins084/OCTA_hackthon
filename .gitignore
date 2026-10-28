@@ -28,3 +28,22 @@ venv/
 
 # Logs
 *.log
+
+# Data (lives on Kaggle, see docs/DATA.md)
+data/*
+!data/processed/
+data/processed/*
+# small Latvian risk tables the score reads at runtime
+!data/processed/lv_condition_risk.csv
+!data/processed/lv_daily_weather_multipliers.csv
+kaggle/octa-data/*
+!kaggle/octa-data/dataset-metadata.json
+
+# Demo build outputs
+app/dist/
+data/cache/
+!app/static/data/
+
+# Conversation exports (contain tokens)
+octachall.txt
+*.export.txt

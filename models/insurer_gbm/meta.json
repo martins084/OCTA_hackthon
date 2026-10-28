@@ -1,0 +1,34 @@
+{
+  "features": [
+    "Area",
+    "VehBrand",
+    "VehGas",
+    "Region",
+    "VehPower",
+    "VehAge",
+    "DrivAge",
+    "BonusMalus",
+    "LogDensity"
+  ],
+  "categorical": [
+    "Area",
+    "VehBrand",
+    "VehGas",
+    "Region"
+  ],
+  "holdout": {
+    "constant": {
+      "poisson_deviance": 0.6268709970008202,
+      "gini": 0.0
+    },
+    "glm": {
+      "poisson_deviance": 0.5931901250109337,
+      "gini": 0.3052947158459996
+    },
+    "gbm": {
+      "poisson_deviance": 0.5721041327833825,
+      "gini": 0.361463681159076
+    }
+  },
+  "best_iteration": 600
+}

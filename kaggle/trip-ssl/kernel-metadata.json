@@ -1,0 +1,13 @@
+{
+  "id": "martinsvarna/octa-trip-ssl",
+  "title": "OCTA trip SSL",
+  "code_file": "train_ssl.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": false,
+  "dataset_sources": ["martinsvarna/octa-driving-data"],
+  "competition_sources": [],
+  "kernel_sources": []
+}

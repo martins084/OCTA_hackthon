@@ -1,0 +1,6 @@
+{
+  "title": "OCTA Driving Data",
+  "id": "martinsvarna/octa-driving-data",
+  "licenses": [{"name": "other"}],
+  "description": "OCTA hackathon working data: Latvian accident open data (data.gov.lv CAIS, LVC) and processed features. Public Kaggle sources are attached to kernels directly, not mirrored here."
+}
