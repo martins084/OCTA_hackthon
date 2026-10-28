@@ -55,6 +55,22 @@ def pvs_trip_dirs(split: str = "dev") -> list[Path]:
     return [ROOT / "data/raw/pvs" / t for t in cfg["dev_trips"]]
 
 
+def grab_is_blind(booking_ids):
+    """Boolean mask: True for Grab bookings in the sealed blind 20% (hash rule in data_splits.json)."""
+    import hashlib
+    import numpy as np
+    return np.array([int(hashlib.sha256(str(int(b)).encode()).hexdigest(), 16) % 10 < 2 for b in booking_ids])
+
+
+def grab_split(df, id_col: str = "bookingID", split: str = "dev"):
+    """Rows of a Grab frame for 'dev' or 'blind' (blind only inside blind_access())."""
+    blind = grab_is_blind(df[id_col].to_numpy())
+    if split == "blind":
+        _check(True, "Grab blind bookings")
+        return df[blind]
+    return df[~blind]
+
+
 def event_dataset(name: str) -> str:
     """Call before loading an event dataset by name; raises if it is blind."""
     _check(name in SPLITS["events"]["blind_datasets"], f"event dataset '{name}'")

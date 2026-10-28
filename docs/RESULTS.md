@@ -44,6 +44,47 @@ Fixes, verified on dev only: 3-fix median on GPS speed; credibility-smoothed eve
 After the fixes: PVS dev normal drives score 81–97; UAH dev ordering unchanged (score AUC 0.90, 50/54 pairs).
 PVS 7–9 are now used; the next blind check of the engine is our own Latvian recordings.
 
+## Milestone v3: learned trip risk (Grab safety labels) + personal baseline, 2026-10-28
+
+**Data.** Grab AI for S.E.A. safety challenge: 20,000 ride-hailing trips recorded by drivers' phones (~1 Hz GPS
+speed/bearing, accelerometer, gyroscope), each labelled dangerous or not by Grab (25%). Labels were taken from a
+public GitHub copy, verified byte-identical in two independent repos. 18 conflicting bookings and 2 malformed trips were dropped.
+**20% (4,027 trips) were sealed as blind before any feature was loaded.** 46 orientation-invariant trip features
+(`src/trip_features.py`), including phone handling (gravity-direction changes, off-axis rotation).
+
+**Dev (5-fold CV, 15,953 trips).**
+
+| Model | Full features AUC | Behaviour-only AUC |
+|---|---|---|
+| Logistic regression | 0.730 | 0.662 |
+| LightGBM | 0.732 | **0.690** |
+| LightGBM, monotone constraints | **0.733** | 0.670 |
+
+"Behaviour-only" drops trip duration and distance. Duration was the top feature of the full model (20% of gain):
+longer trips get flagged more simply because they last longer. That is exposure, which an insurer prices per km;
+the driving score must not punish long trips. **The product uses the behaviour-only model.** Its top features are
+max speed, horizontal acceleration, braking rate, phone re-orientation, sharp yaw and turning rate.
+Predicted-risk deciles (full model): dangerous rate 4% in the lowest decile vs 65% in the highest.
+
+**Blind (sealed 4,027 trips, pre-registered pass = AUC ≥ lower dev-CV bound): PASSED.**
+
+| Model | Dev CV | Blind |
+|---|---|---|
+| Behaviour-only (product) | 0.690 [0.680–0.700] | **0.696 [0.677–0.715]** |
+| Full, with exposure (reference) | 0.733 [0.724–0.741] | **0.747 [0.729–0.765]** |
+
+**External transfer, zero-shot.** On UAH (Spain, other phone, never trained on), the behaviour model separates aggressive
+from normal trips with AUC 0.80–0.81. It does not detect drowsiness (0.4–0.5), which Grab labels don't cover.
+Its absolute calibration does not transfer to UAH (all UAH trips look "safer than ~99%"), because UAH accelerometer data is
+Kalman-filtered, gravity-removed and has no gyroscope. Raw phone data does transfer: PVS normal drives spread over the
+32nd–86th percentile once 1 Hz input is point-sampled like Grab phones rather than averaged.
+**Decision:** the headline score stays the expert score (its ordering is validated on UAH); the learned Grab risk is shown
+alongside it for raw-phone recordings; blending waits for our own Latvian recordings.
+
+**Personal baseline (`src/personal_baseline.py`, no labels).** Each trip is compared with the same driver's other normal
+trips (leave-one-out) on road-type-robust features. On UAH dev drivers: risky-vs-normal AUC 0.88, aggressive 0.96,
+drowsy 0.81 (population model: 0.92). It comes with explanations such as "time over the limit higher than your usual (12.1 sd)".
+
 ## Demo
 
 `app/` replays 43 trips through the engine (`app/build_demo.py`). Score by actual style (UAH): normal 92.4,

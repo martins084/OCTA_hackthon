@@ -49,6 +49,17 @@
       "date": "2026-10-28",
       "change": "Ferreira blind -> dev; PVS 7-9 added as blind",
       "reason": "v1 blind run showed event detection fails on an unseen sensor; diagnosing it requires a third sensor in dev. Ferreira results after this date are dev numbers, not blind."
+    },
+    {
+      "date": "2026-10-28",
+      "change": "Grab safety dataset added; 20% of bookings sealed as blind by hash rule",
+      "reason": "20k labelled trips for a learned trip-level risk model"
     }
-  ]
+  ],
+  "grab": {
+    "blind_fraction": 0.2,
+    "rule": "blind if sha256(str(bookingID)) as int % 10 < 2",
+    "_note": "Locked 2026-10-28 before any Grab feature was loaded. Labels: official Grab AI for S.E.A. safety labels, verified identical (sha256 fe609ddd...) in two independent GitHub repos. 18 bookings with conflicting labels are dropped.",
+    "blind_path": "data/raw/blind_grab"
+  }
 }

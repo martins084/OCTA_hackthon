@@ -66,16 +66,50 @@ def eval_pvs() -> tuple[dict, str]:
     return out, f"engine v2: event_gbm {meta['model_sha']} + style_gbm + GPS confirmation"
 
 
+def eval_grab() -> tuple[dict, str]:
+    """Both frozen trip risk models on the sealed 20% of Grab trips (behaviour-only = primary)."""
+    out, names = {}, []
+    for d in ("trip_risk", "trip_risk_full"):
+        m, name = _eval_grab_model(ROOT / "models" / d)
+        out[d] = m
+        names.append(name)
+    return out, " + ".join(names)
+
+
+def _eval_grab_model(mdir) -> tuple[dict, str]:
+    """Pre-registered (docs/PLAN.md): primary = ROC-AUC; pass if blind AUC >= lower bound of dev-CV 95% CI."""
+    import pandas as pd
+    from sklearn.isotonic import IsotonicRegression  # noqa: F401  (calibration is monotone: AUC unaffected)
+    from sklearn.metrics import average_precision_score, roc_auc_score
+    meta = json.loads((mdir / "meta.json").read_text())
+    sha = hashlib.sha256((mdir / "model.txt").read_bytes()).hexdigest()[:12]
+    if sha != meta["model_sha"]:
+        raise RuntimeError("trip_risk model.txt does not match meta.json; refreeze")
+    booster = lgb.Booster(model_file=str(mdir / "model.txt"))
+    with blind_access():
+        df = pd.read_parquet(ROOT / SPLITS["grab"]["blind_path"] / "grab_blind_features.parquet")
+    p = booster.predict(df[meta["features"]])
+    y = df.label.to_numpy()
+    rng = np.random.default_rng(0)
+    boots = [roc_auc_score(y[i], p[i]) for i in (rng.integers(0, len(y), len(y)) for _ in range(1000))]
+    dev = meta["dev_cv"][meta["model"]]
+    auc = float(roc_auc_score(y, p))
+    out = dict(auc=auc, auc_ci95=[float(np.quantile(boots, .025)), float(np.quantile(boots, .975))],
+               pr_auc=float(average_precision_score(y, p)), n=len(y), positive_rate=float(y.mean()),
+               dev_cv_auc=dev["auc"], dev_cv_ci95=dev["auc_ci95"], passed=bool(auc >= dev["auc_ci95"][0]))
+    return out, f"trip_risk {meta['model']} {sha}"
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("target", choices=["style", "pvs"])
+    ap.add_argument("target", choices=["style", "pvs", "grab"])
     ap.add_argument("--confirm", action="store_true", help="required: this reads blind data")
     ap.add_argument("--note", required=True)
     args = ap.parse_args()
     if not args.confirm:
         raise SystemExit("Refusing to touch blind data without --confirm (see docs/PLAN.md section 3).")
 
-    m, model = {"style": eval_style, "pvs": eval_pvs}[args.target]()
+    m, model = {"style": eval_style, "pvs": eval_pvs, "grab": eval_grab}[args.target]()
     print(json.dumps(m, indent=2))
     if not LOG.exists():
         LOG.write_text("# Blind evaluation log\n\nEvery read of blind data, appended by src/blind_eval.py.\n\n"

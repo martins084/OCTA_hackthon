@@ -228,6 +228,30 @@ def detect_imu_events(imu: pd.DataFrame, gps: pd.DataFrame) -> pd.DataFrame:
                                        "gps_confirmed", "lat", "lon"])
 
 
+def learned_risk(gps: pd.DataFrame, imu: pd.DataFrame) -> dict | None:
+    """Grab-trained behaviour model: calibrated P(trip flagged dangerous) and population percentile."""
+    from trip_features import to_1hz, trip_features
+    mdir = ROOT / "models/trip_risk"
+    if not (mdir / "meta.json").exists():
+        return None
+    booster, meta = _load(mdir)
+    d = pd.DataFrame({"t": imu.t, "ax": imu.ax, "ay": imu.ay, "az": imu.az})
+    for c in ("gx", "gy", "gz"):
+        if c in imu:
+            d[c] = imu[c]
+    d["speed"] = np.interp(d.t, gps.t, gps.speed / 3.6)
+    if "course" in gps and gps.course.notna().any():
+        d["bearing"] = np.interp(d.t, gps.t, np.degrees(np.unwrap(np.radians(gps.course.ffill().bfill())))) % 360
+    f = trip_features(to_1hz(d))
+    if not f:
+        return None
+    raw = float(booster.predict(pd.DataFrame([f]).reindex(columns=meta["features"]))[0])
+    p = float(np.interp(raw, meta["isotonic_x"], meta["isotonic_y"]))
+    pct = float(np.searchsorted(meta["risk_cdf"], p, side="left"))          # 0..100 percentile of risk
+    return dict(p_danger=round(p, 4), relative_risk=round(p / meta["base_rate"], 3),
+                safer_than_pct=round(100 - min(pct, 100), 1), model_sha=meta["model_sha"])
+
+
 def analyze_trip(gps: pd.DataFrame, imu: pd.DataFrame, start: pd.Timestamp,
                  driver: dict | None = None, use_osm: bool = True, detail: bool = False) -> dict:
     """detail=True adds what a replay UI needs: GPS track, score timeline, what-if context variants."""
@@ -249,13 +273,14 @@ def analyze_trip(gps: pd.DataFrame, imu: pd.DataFrame, start: pd.Timestamp,
     p_risky = 1 - p_style["NORMAL"]
 
     ctx, ctx_info = trip_context(gps, start)
+    lr = learned_risk(gps, imu)
     s = score_trip(windows, p_risky, ctx, load_context_tables())
 
     imu_events = (detect_imu_events(imu, gps) if {"gx", "gy", "gz"} <= set(imu.columns)
                   else pd.DataFrame(columns=["type"]))
     km = float(windows.km.sum() / 4)                      # 60 s windows at 15 s step -> 4x overlap
     report = dict(
-        score=s.score, insurer_multiplier=round(s.insurer_multiplier, 3), reasons=s.reasons,
+        score=s.score, insurer_multiplier=round(s.insurer_multiplier, 3), reasons=s.reasons, learned_risk=lr,
         penalties=s.penalties, style_probabilities=p_style,
         trip=dict(duration_min=round(float(gps.t.iloc[-1] - gps.t.iloc[0]) / 60, 1), distance_km=round(km, 1),
                   mean_speed_kmh=round(float(gps.speed[gps.speed > 5].mean()), 1),

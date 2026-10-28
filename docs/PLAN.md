@@ -69,6 +69,13 @@ Event rates are also what both the driver and the insurer understand.
   leave-one-dataset-out dev results only (scripts/exp_events_lodo.py, src/events.py).
 - Own recordings: same engine; evaluated when collected (docs/RECORDING.md).
 
+### Pre-registered before the Grab blind run (2026-10-28)
+- Trip risk models, chosen on 5-fold dev CV (monotone GBM unless it costs > 0.005 AUC vs plain GBM):
+  **primary `models/trip_risk` = behaviour-only** (no trip duration/distance: exposure is priced separately, the
+  driving score must not punish long trips); reference `models/trip_risk_full` (with exposure).
+  Blind set: sealed 20% of Grab trips (4,027). **Primary: ROC-AUC. Pass = blind AUC ≥ lower bound of dev-CV 95% CI.**
+- Self-supervised Transformer: compared on dev CV only; enters the blind run only if it improves the GBM ensemble on dev.
+
 ## 4. Metrics
 
 - Events: per-event precision/recall/F1 per type (an event counts as detected if the prediction overlaps the

@@ -37,3 +37,13 @@ def test_gate_closes_after_use():
 def test_dev_pvs_excludes_blind():
     names = {p.name for p in splits.pvs_trip_dirs("dev")}
     assert names.isdisjoint(splits.SPLITS["pvs"]["blind_trips"])
+
+
+def test_grab_blind_is_sealed_and_stable():
+    import pandas as pd
+    df = pd.DataFrame({"bookingID": range(10_000)})
+    dev = splits.grab_split(df)
+    assert 0.17 < 1 - len(dev) / len(df) < 0.23                 # ~20% sealed
+    assert splits.grab_is_blind([123456])[0] == splits.grab_is_blind([123456])[0]
+    with pytest.raises(splits.BlindDataError):
+        splits.grab_split(df, split="blind")
